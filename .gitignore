@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-/local_files_only
+nib_analytics_pilot.Rproj
+/local_files

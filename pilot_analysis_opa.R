@@ -79,6 +79,7 @@ opa_records <- opa_works_raw %>%
 # Save data in folder /data/raw/ for later use
 saveRDS(opa_works_raw,"data/raw/opa_works_raw.rds")
 saveRDS(opa_authorinfo_raw,"data/raw/opa_authorinfo_raw.rds")
+saveRDS(opa_records,"data/raw/opa_records.rds")
 
 #-----------------------------------
 # Preparation of final data-set
