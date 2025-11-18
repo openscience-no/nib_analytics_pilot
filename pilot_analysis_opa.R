@@ -7,39 +7,34 @@
 #    IP is allowed entry at the NIB-server
 #    If pc is located in Sikt; edu-vpn
 
-# - Checks dependencies, sets up connection to server and connects to either WoS or OpenAlex. 
-# - Retrieves datasets by passing queries to server. Performs some post-treatment of the raw datasets
-
-# Please note that at current, NONE of the bibliometric analysis are verified. 
+# Please note that Cristin-info is merged into wos_records and not the other way around. 
+# This will naturally discard records from the cristin-data-set. 
+# wos_records will thus never be complete Cristin-representations
+# Also note that NONE of the bibliometric analysis are verified. 
 # Results and plots should therefore not be used for other than illustration purposes.
 
+#-----------------------------------
+# Load functions and set variables, usually set once
+#-----------------------------------
 # Loading analysis-functions. Sourced script contains all functions necessary to run the bibliometric try-outs.
 source("pilot_functions.R")
 
-# Please note that Cristin-info is merged into opa_records and not the other way around. 
-# This will naturally discard records from the cristin-data-set. 
-# opa_records will thus never be complete with cris-representations
-
-#-----------------------------------
-# Set variables. Usually set once
-#-----------------------------------
-
 # Set scope for analysis. Default is "Norway" e.g. all records, 
-# but this can be limited to a single institution by institution-number i cris
+# but this can be further limited to a single institution by adding the cris-institution-number.
 # Uncomment the below line with correct number
 # scope <- 184      # UiB - e.g institution-number in Cristin
 
-# Set year-span limiting the dataset by year_of_publication as represented in WoS. This feature does not use year_reported from cris
-year_first <- 2020
+# Set year-span for limiting the dataset by year_of_publication as represented in WoS. 
+# This feature does not use year_reported from crisyear_first <- 2020
 year_last  <- 2024
 
-# Define username
+# Set  username
 nib_user <- "larswen"
 
-# Choose db to fetch data from.  Obviously user needs correct privileges and access to the database to be queried. 
+# Set db, User needs access-privileges to the database. 
 db_name  <- "openalex_test01"
 
-# Create connection. User will be prompted for password
+# Establish connection. User will be prompted for password
 nib_connection <- DBI::dbConnect(RPostgres::Postgres(),
                                  host ="nibdb.bibliometri.no",
                                  dbname=db_name, 
@@ -48,8 +43,10 @@ nib_connection <- DBI::dbConnect(RPostgres::Postgres(),
                                  user=nib_user,
                                  rstudioapi::askForPassword("Database password"))
 
-
-# Retrieve works from OpenAlex
+#-----------------------------------
+# Retrieve data from OpenAlex
+#-----------------------------------
+# Fetch works
 opa_works_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_works") %>% 
   as_tibble()
 
@@ -59,8 +56,9 @@ opa_authorinfo_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv
   mutate(no_authors=as.double(no_authors),
          no_author_shares=as.double(no_author_shares))
 
-# The below query (commented out) retrieve the SQL used to create materialized views for the  datasets from openalex
-# May be useful if user need to change the scope of records or other tweaks in custom sql.
+# The below query (commented out) Retrieves the underlying SQL used to create 'materialized views' fetched from OpenAlex
+# May be useful if user need to change the scope of records or other tweaks.
+
 # opa_query_definitions <- DBI::dbGetQuery(nib_connection,"SELECT schemaname, matviewname, definition FROM openalex_test01.pg_catalog.pg_matviews;")
 
 
@@ -78,14 +76,16 @@ opa_records <- opa_works_raw %>%
       mutate(fraction_val = 1/no_author_shares) %>% 
       distinct(),by="unique_id") 
 
-# Save data
+# Save data in folder /data/raw/ for later use
 saveRDS(opa_works_raw,"data/raw/opa_works_raw.rds")
 saveRDS(opa_authorinfo_raw,"data/raw/opa_authorinfo_raw.rds")
 
-# Preparation of final data-set: 
-# At this point we have raw datasets with records from wos, limited by previously matched records in the cris
-# Next step is to join in cris-data into a final scoped data-set limited by institution (optional).. 
-# Also create labels for use in plots (full institution name, time-span, total number of publications etc.)
+#-----------------------------------
+# Preparation of final data-set
+#-----------------------------------
+# At this point we have raw datasets with records from openalex, which is limited by previously matched cris-records.
+# Next step is to join in cris-data into a final  data-set
+# Information-labels are also for use in plots (full institution name, time-span,total number of publications etc.)
 
 # Set scope for OpenAlex-data and join in cristin-info:
 df_opa_analysis <- create_data_set(opa_records,df_cri_oa_nib,scope,year_first,year_last)  
@@ -128,6 +128,7 @@ save_plot(plot_number_of_authors_opa,df_opa_labels,"OpenAlex","5_number_of_autho
 
 # 7. Most productive authors by fractions 
 # (Not ready)
+
 #------------------------------------------------
 #  Analysis - citations 
 #------------------------------------------------
