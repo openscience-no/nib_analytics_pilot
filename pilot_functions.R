@@ -1,6 +1,3 @@
-# To do: 
-#  Fix bredde på 6,7, brekk på overskrift
-#  Legg inn riktig antall poster som grunnlag for analysen i venstre hjørne, 100 000-tall
 
 #-------------------------------------------------------------------
 # Step 0: Load data and check dependencies
@@ -87,7 +84,7 @@ match_inventory_cris_wos <- function(cris_wos_df,col_id) {
   return(match_overview_wos)
 } # End function
 
-# Function for formatting result and  write to file
+# Function for formatting result and write to file
 format_inventory_and_write_xlsx <- function(df,file) {
   
   
@@ -276,7 +273,7 @@ add_datasheet_to_excel <- function(datalist,sheet_name, filepath) {
 
 # Prep a) Creates either a full dataset as limited and downloaded from NIB, or limited further by institution. 
 create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, year_first,year_last) {
-
+  
   if (limit_code=="Norway") { # National scope, no limiting
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
       left_join(nib_items, by="cri_id",relationship = "many-to-many")
@@ -306,25 +303,25 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, year_first,year_
   print("Setting oa-colors in dataset")
   # Simplifying some OA-info by mapping categories
   nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
-  mutate(calculated_oa_status=calculated_oa_status %>%
-           str_replace("gold_deal", "gold") %>%
-           str_replace("bronze_available", "closed") %>%
-           str_replace("green_no", "green") %>%
-           str_replace("preprint_available_no", "closed") %>%
-           str_replace("preprint_available", "closed") %>%
-           str_replace("unknown", "closed") %>%
-           str_replace("anomalies", "closed") %>%
-           str_replace("NA", "closed") %>%
-           replace_na("closed")) %>% 
+    mutate(calculated_oa_status=calculated_oa_status %>%
+             str_replace("gold_deal", "gold") %>%
+             str_replace("bronze_available", "closed") %>%
+             str_replace("green_no", "green") %>%
+             str_replace("preprint_available_no", "closed") %>%
+             str_replace("preprint_available", "closed") %>%
+             str_replace("unknown", "closed") %>%
+             str_replace("anomalies", "closed") %>%
+             str_replace("NA", "closed") %>%
+             replace_na("closed")) %>% 
     ungroup()
   
   print("calculating number of records (by cri_id)")
-# Number of records (cri_id)
-n_doc <- nib_lim_merge_nva_full %>% 
-  ungroup() %>% 
-  summarise(n_distinct(cri_id)) %>% 
-  pull()
-
+  # Number of records (cri_id)
+  n_doc <- nib_lim_merge_nva_full %>% 
+    ungroup() %>% 
+    summarise(n_distinct(cri_id)) %>% 
+    pull()
+  
   # Returning
   print(paste("Returning a base dataset with ",n_doc," records. (Not limited by year)", sep=""))
   return(nib_lim_merge_nva_full)
@@ -338,8 +335,8 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code, year_first,year_las
   if (limit_code=="Norway") { # National scope, no limiting
     inst <- "Norway"
   } else if (limit_code=="RCN") { # National scope, no limiting
-      inst <- "Research Council Norway"
-      
+    inst <- "Research Council Norway"
+    
   } else if (stringr::str_length(as.integer(limit_code))>2) { # Institutional scope, limiting to institution
     inst <- nib_lim_merge_nva_full %>% 
       ungroup() %>% 
@@ -396,7 +393,7 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code, year_first,year_las
                    filter(!is.na(cri_year_reported),cri_category_type=="Artikkel") %>%
                    summarise(n_nib_publ=n_distinct(unique_id)) %>% 
                    pull()
-                 )
+  )
   print(labels)
   return(labels)
   
@@ -469,20 +466,20 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_co
     # Labels
     geom_label(aes(label = scales::comma(n)), size = 3, show.legend = FALSE) +
     # Styling
-     theme_economist() +
-     theme(
-       axis.text = element_text(size = 8),
-       axis.title.y = element_text(margin = margin(r = 10)),
-       axis.title.x = element_text(margin = margin(t = 10)),
-       plot.background = element_rect(fill = theme_colour)) +
-     scale_y_continuous(
-       labels = scales::label_comma(),
-       breaks = scales::breaks_pretty(n = n_year_span)) +
-     scale_x_continuous(
-       limits = c(analysis_data_labels$year_first, analysis_data_labels$year_last),
-       breaks = seq(analysis_data_labels$year_first, analysis_data_labels$year_last, 1)
-     ) +
-
+    theme_economist() +
+    theme(
+      axis.text = element_text(size = 8),
+      axis.title.y = element_text(margin = margin(r = 10)),
+      axis.title.x = element_text(margin = margin(t = 10)),
+      plot.background = element_rect(fill = theme_colour)) +
+    scale_y_continuous(
+      labels = scales::label_comma(),
+      breaks = scales::breaks_pretty(n = n_year_span)) +
+    scale_x_continuous(
+      limits = c(analysis_data_labels$year_first, analysis_data_labels$year_last),
+      breaks = seq(analysis_data_labels$year_first, analysis_data_labels$year_last, 1)
+    ) +
+    
     # Custom legend labels and colors
     scale_color_manual(
       values = c("All data" = "steelblue", "NVI data" = "darkgreen","NVI articles" ="black"),
@@ -495,7 +492,7 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_co
                         analysis_data_labels$year_first, "-", 
                         analysis_data_labels$year_last, ")"),
       caption = paste0("Total no. publications used as basis for plot: ", 
-                      n_records_basis,"\n(data: ", db, ")"),
+                       n_records_basis,"\n(data: ", db, ")"),
       x = paste0("Year of publication (", db, ")"),
       y = "Number of publications"
     )
@@ -556,7 +553,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
   }
   
   # Plot
- p <- source_data %>% 
+  p <- source_data %>% 
     ggplot(aes(y=reorder(source_name, n), x=n)) +
     geom_segment(aes(xend=0, yend=reorder(source_name, n)), colour  = "steelblue",linewidth = 0.7) +
     geom_point(size=2, color="darkgreen") +
@@ -570,7 +567,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
     #scale_fill_economist() +
     #scale_color_economist() +
     #scale_x_continuous(labels = scales::label_comma()) +
-   scale_y_discrete(labels = truncate_labels) +
+    scale_y_discrete(labels = truncate_labels) +
     labs(
       title = paste("No. of publications per journal - top ",max_no_journals, sep=""),
       subtitle = paste(analysis_data_labels$institution," (",
@@ -582,7 +579,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
       x = "No. publications") +
     guides(colour = "none") 
   
- 
+  
   # Add annotation to the canvas (not plot panel)
   p <- cowplot::ggdraw(p) +
     cowplot::draw_label(
@@ -603,7 +600,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
 
 # 3. Top n countries in articles-cooperation 
 plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_countries,db, pick_colour) {
-
+  
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
@@ -614,14 +611,14 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>% 
     summarise(n=n_distinct(cri_id))
   
-
+  
   # Extracting country-info from detailed author-dataset
   wad <- authordetails %>% # 
     dplyr::select(cri_id,country) %>% 
     mutate(country=replace_na(country,"unknown")) %>% 
     distinct()
   
-
+  
   # Final dataset joining in country-info
   country_data <- analysis_data_set %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>%   
@@ -634,10 +631,10 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
     summarise(n=n_distinct(cri_id)) %>% 
     arrange(desc(n)) %>% 
     slice_max(n,n=max_no_countries)
-
   
- # Make plot  
- p <- country_data %>% #no_countries
+  
+  # Make plot  
+  p <- country_data %>% #no_countries
     ggplot(aes(x=n, y=reorder(country, n),label=n)) +
     geom_segment(aes(xend=0,yend=reorder(country, n)),linewidth=0.8, color  = "steelblue") + 
     geom_point(size=3, color="darkgreen") +
@@ -701,9 +698,9 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colou
   
   
   # Plot of OA counts per year
-oa_data <- analysis_data_set %>% 
-  filter(!is.na(cri_year_reported) & cri_category_type == "Artikkel") %>% # Selecting articles only
-  filter(cri_year_reported <= analysis_data_labels$year_last, cri_year_reported >=analysis_data_labels$year_first) %>% 
+  oa_data <- analysis_data_set %>% 
+    filter(!is.na(cri_year_reported) & cri_category_type == "Artikkel") %>% # Selecting articles only
+    filter(cri_year_reported <= analysis_data_labels$year_last, cri_year_reported >=analysis_data_labels$year_first) %>% 
     select(cri_id, cri_year_reported, calculated_oa_status) %>% 
     distinct() %>% 
     mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
@@ -759,60 +756,6 @@ oa_data <- analysis_data_set %>%
   result <- list(plot=p,
                  data = oa_data)
   return(result)
-} # End function
-
-# 5. Mean number of authors in the dataset per NPI-field
-# NOT USED
- plot_no_authors <- function(analysis_data_set,analysis_data_labels,db, pick_colour) {
-
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
-
-  # Author-count per year and NIB-category (as given by source/journal)
-  p <- analysis_data_set %>%
-    filter(!is.na(cri_npi_field)) %>%
-    group_by(cri_npi_field) %>%
-    select(cri_npi_field,cri_id,no_authors) %>%
-    distinct() %>%
-    summarise(n_publ=n_distinct(cri_id),
-              avg_no_authors= round(mean(no_authors),digits = 1),
-              max_auth=max(no_authors)) %>%
-    arrange(avg_no_authors) %>%
-    # Plot
-    ggplot(aes(y=reorder(cri_npi_field, avg_no_authors), x=avg_no_authors, label=avg_no_authors)) +
-    geom_segment(aes(xend=0, yend=reorder(cri_npi_field, avg_no_authors)),linewidth=0.7, colour  = "steelblue") +
-    geom_point(size=2, color="darkgreen") +
-    geom_text(size = 3, position = position_nudge(x = 30)) +
-    theme_economist(base_size = 3) +
-    theme(
-      axis.text = element_text(size = 8),
-      axis.title.y = element_text(margin = margin(r = 10)),
-      axis.title.x = element_text(margin = margin(t = 10)),
-      plot.background = element_rect(fill = theme_colour)) +
-    scale_fill_economist() +
-    scale_color_economist() +
-    scale_x_continuous(labels = scales::label_comma()) + # Could try to use trans = 'log10',
-    labs(
-      title = "Avg. number of authors per NPI-field" ,
-      subtitle = paste(analysis_data_labels$institution," (",analysis_data_labels$timespan_low,"-",analysis_data_labels$timespan_high,")",sep=""),
-      caption = paste("Total no. publications in ",db,"-dataset:", analysis_data_labels$no_publications, sep=""),
-      tag = waiver(),
-      y = "NPI-field",
-      x = "Avg. No. tot. authors.") +
-    guides(colour = "none")
-
-  # Add annotation to the canvas (not plot panel)
-  p <- cowplot::ggdraw(p) +
-    cowplot::draw_label(
-      paste0("This is a NIB-test-plot using ",db,"-data.\nResults are not verified."),
-      x = 0.03, y = 0.03,  # bottom left corner in [0,1] canvas coords
-      hjust = 0, vjust = 0,
-      fontface = "plain",
-      size = 10,
-      color = "darkred"
-    )
-  return(p)
 } # End function
 
 # 6. Top n most productive authors measured by number of publications
@@ -885,7 +828,7 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
       size = 10,
       color = "darkred"
     )
-
+  
   print("Done with calculations, returning plot and data ('wd_top_authors_count') ")
   # returning results in a list, plot and data
   result <- list(plot=p,
@@ -961,7 +904,7 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
       size = 10,
       color = "darkred"
     )
-
+  
   # returning results in a list, plot and data
   result <- list(plot=p,
                  data = author_f_data)
@@ -1022,65 +965,6 @@ plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_n
       x = "No. citations",
       y= "Category") +
     guides(colour = "none")
-
-    # Add annotation to the canvas (not plot panel)
-  p <- cowplot::ggdraw(p) +
-    cowplot::draw_label(
-      paste0("This is a NIB-test-plot using ",db,"-data.\nResults are not verified."),
-      x = 0.03, y = 0.03,  # bottom left corner in [0,1] canvas coords
-      hjust = 0, vjust = 0,
-      fontface = "plain",
-      size = 10,
-      color = "darkred"
-    )
-  
-# returning results in a list, plot and data
-  result <- list(plot=p,
-                 data = cit_cat_dataset)
-  print("Done with calculations, returning plot and data ('wd_mean_cit_top_categories') ")
-  return(result)
-} # End function
-
-# 9. Mean number of citations categories mapped to a single NPI-category
-# NOT USED
-plot_citation_category_box <- function(analysis_data_set,analysis_data_labels, input_category,db,pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
-  
-  # Boxplot-version: Citation-distribution per wos-category (limited to input_category) 
-
-  p <- analysis_data_set %>% 
-    filter(!is.na(category)) %>% 
-    filter(nib_category==input_category) %>% 
-    select(category,cri_id, cited_by_count, category_reference_val) %>% 
-    distinct() %>% 
-    group_by(category) %>% 
-    mutate(mean_cited_by_count = mean(cited_by_count, na.rm = T),
-           mean_crv = mean(category_reference_val, na.rm = T)) %>% 
-    ggplot(aes(x=cited_by_count, y=reorder(category, mean_cited_by_count))) +
-    geom_boxplot(outlier.size = 1, outlier.alpha = 0.5) +
-    geom_point(aes(x=mean_cited_by_count),size=1.5, color="darkblue") +
-    geom_point(aes(x=mean_crv),size=1.5, color="darkgreen", alpha=0.5) +
-    theme_economist(base_size = 3) +
-    theme(
-      axis.text = element_text(size = 8),
-      axis.title.y = element_text(margin = margin(r = 10)),
-      axis.title.x = element_text(margin = margin(t = 10)),
-      plot.background = element_rect(fill = theme_colour)) +
-    scale_fill_economist() +
-    scale_color_economist() +
-    scale_x_continuous(trans = 'log2') + 
-    annotation_logticks(sides="b") + 
-    labs(
-      title = paste("No. citations per category (NPI: ",input_category,")","\n","With ref-value (green).", sep=""),
-      subtitle = paste(analysis_data_labels$institution," (",analysis_data_labels$timespan_low,"-",analysis_data_labels$timespan_high,")",sep=""),
-      caption = paste("Total no. publications in ",db, "-dataset:", analysis_data_labels$no_publications, sep=""),
-      tag = waiver(),
-      x = "No. citations (log2-scale)",
-      y= "WoS-Category") +
-    guides(colour = "none")
   
   # Add annotation to the canvas (not plot panel)
   p <- cowplot::ggdraw(p) +
@@ -1092,7 +976,12 @@ plot_citation_category_box <- function(analysis_data_set,analysis_data_labels, i
       size = 10,
       color = "darkred"
     )
-  return(p)
+  
+  # returning results in a list, plot and data
+  result <- list(plot=p,
+                 data = cit_cat_dataset)
+  print("Done with calculations, returning plot and data ('wd_mean_cit_top_categories') ")
+  return(result)
 } # End function
 
 # 10. Shares of publication that sits  within the 10,25 and 50-percentile
@@ -1164,7 +1053,7 @@ plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, in
       size = 10,
       color = "darkred"
     )
-
+  
   # returning results in a list, plot and data
   result <- list(plot=p,
                  data = percentile_data)
@@ -1189,16 +1078,16 @@ plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,pi
     summarise(n=n_distinct(cri_id))
   
   # Calculating mean-values per NPI-area for comparison across OA-categories
-avg_lines <- analysis_data_set  %>% 
-  filter(!is.na(cri_npi_area)) %>%
-  select(cri_id, calculated_oa_status,cited_by_count,cri_npi_area) %>% 
-  distinct() %>% 
-  mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
-  group_by(cri_npi_area) %>% 
-  summarise(mean_npi_cited=round(mean(cited_by_count,na.rm = T),digits=1))
-
-# Grouping on NPI-area.
-oa_cit_data <- analysis_data_set %>% 
+  avg_lines <- analysis_data_set  %>% 
+    filter(!is.na(cri_npi_area)) %>%
+    select(cri_id, calculated_oa_status,cited_by_count,cri_npi_area) %>% 
+    distinct() %>% 
+    mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
+    group_by(cri_npi_area) %>% 
+    summarise(mean_npi_cited=round(mean(cited_by_count,na.rm = T),digits=1))
+  
+  # Grouping on NPI-area.
+  oa_cit_data <- analysis_data_set %>% 
     filter(!is.na(cri_npi_area)) %>%
     select(cri_id, calculated_oa_status,cited_by_count, cri_npi_area) %>% 
     distinct() %>% 
@@ -1206,13 +1095,13 @@ oa_cit_data <- analysis_data_set %>%
     group_by(cri_npi_area,calculated_oa_status) %>% 
     summarise(n = n_distinct(cri_id),
               mean_oa_npi_cited=round(mean(cited_by_count,na.rm = T),digits=1)) 
- 
- p <- oa_cit_data %>% 
-   ggplot(aes(x = calculated_oa_status, y = mean_oa_npi_cited,fill=calculated_oa_status, 
+  
+  p <- oa_cit_data %>% 
+    ggplot(aes(x = calculated_oa_status, y = mean_oa_npi_cited,fill=calculated_oa_status, 
                label = paste("cit=",mean_oa_npi_cited,"/n= ",n,sep=""))) + #\n
     geom_col() +
     geom_text(size=2,vjust=0.5) +
-   geom_hline(aes(yintercept = mean_npi_cited), data = avg_lines, color = "darkred", linewidth=0.3, linetype="dashed") +
+    geom_hline(aes(yintercept = mean_npi_cited), data = avg_lines, color = "darkred", linewidth=0.3, linetype="dashed") +
     theme_economist() +
     theme(axis.text=element_text(size=5),
           axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
@@ -1233,22 +1122,22 @@ oa_cit_data <- analysis_data_set %>%
       tag = waiver(),
       x = "OA-type",
       y= "number of citations") +
-   labs(fill="OA-type") +
-   facet_wrap(~cri_npi_area, scales= "free_y",ncol=2)
+    labs(fill="OA-type") +
+    facet_wrap(~cri_npi_area, scales= "free_y",ncol=2)
   
- # Add annotation to the canvas (not plot panel)
- p <- cowplot::ggdraw(p) +
-   cowplot::draw_label(
-     paste0("This is a NIB-test-plot using ",db,"-data.\nResults are not verified."),
-     x = 0.03, y = 0.03,  # bottom left corner in [0,1] canvas coords
-     hjust = 0, vjust = 0,
-     fontface = "plain",
-     size = 10,
-     color = "darkred"
-   )
- # returning results in a list, plot and data
- result <- list(plot=p,
-                data = oa_cit_data)
- print("Done with calculations, returning plot and data ('wd_oa_cit_distribution_npi_area') ")
- return(result)
+  # Add annotation to the canvas (not plot panel)
+  p <- cowplot::ggdraw(p) +
+    cowplot::draw_label(
+      paste0("This is a NIB-test-plot using ",db,"-data.\nResults are not verified."),
+      x = 0.03, y = 0.03,  # bottom left corner in [0,1] canvas coords
+      hjust = 0, vjust = 0,
+      fontface = "plain",
+      size = 10,
+      color = "darkred"
+    )
+  # returning results in a list, plot and data
+  result <- list(plot=p,
+                 data = oa_cit_data)
+  print("Done with calculations, returning plot and data ('wd_oa_cit_distribution_npi_area') ")
+  return(result)
 } # End function

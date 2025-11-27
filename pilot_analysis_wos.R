@@ -36,8 +36,9 @@ source("pilot_functions.R")
 # Load Cristin-data from disk. (Must be located in the "/data"-folder).
 # Selection of data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
 # Do not load data if variable already exists.
-# ifelse(exists("df_cri_oa_nib"),print("df_cri_oa_nib allready loaded"), df_cri_oa_nib <- read_rds("data/df_cri_oa_nib.rds"))
-ifelse(exists("df_cri_oa_nib"),print("df_cri_oa_nib allready loaded"), df_cri_oa_nib <- read.csv("data/df_cri_oa_nib.csv"))
+ifelse(exists("df_cri_oa_nib"),
+       print("df_cri_oa_nib allready loaded"), 
+       df_cri_oa_nib <- read.csv("data/df_cri_oa_nib.csv"))
 
 # Set scope for analysis. Default is "Norway" e.g. all records, 
 # but this can be further limited to a single institution by adding the cris-institution-number.
@@ -151,6 +152,7 @@ npi_category <- "Engineering"
 #  a) create a dataset and a plot, which are returned from each function as a list of two elements
 #  b) Plots are saved on disk (in folder "/plots")
 #  c) Data for plots (and the plot itself) is saved to inventory excel-file created above
+
 #------------------------------------------------
 #  Analysis - basic numbers
 #------------------------------------------------
@@ -179,10 +181,6 @@ add_datasheet_to_excel(wd_oa_distribution,"wd_oa_distribution",outputfile)
 #  Analysis - Authors
 #------------------------------------------------
 
-# 5. Avg-author-count per year in each NPI-category (as given by source/journal)
-# plot_number_of_authors_wos <- plot_no_authors(df_wos_analysis,df_wos_labels,"WoS","blue")
-# save_plot(plot_number_of_authors_wos,df_wos_labels,"WoS","5_number_of_authors")
-
 # 6. Most productive authors by number of publications. Perspective from WoS-data
 wd_top_authors_count <- plot_top_authors_count(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS","blue") 
 save_plot(wd_top_authors_count$plot,df_wos_labels,"WoS","wd_top_authors_count")
@@ -192,6 +190,7 @@ add_datasheet_to_excel(wd_top_authors_count,"wd_top_authors_count",outputfile)
 wd_top_authors_fraction <- plot_top_authors_fraction(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS","blue")
 save_plot(wd_top_authors_fraction$plot,df_wos_labels,"WoS","wd_top_authors_fraction")
 add_datasheet_to_excel(wd_top_authors_fraction,"wd_top_authors_fraction",outputfile)
+
 #------------------------------------------------
 #  Analysis - citations 
 #------------------------------------------------
@@ -200,10 +199,6 @@ add_datasheet_to_excel(wd_top_authors_fraction,"wd_top_authors_fraction",outputf
 wd_mean_cit_top_categories <- plot_citation_category(df_wos_analysis,df_wos_labels,40,"WoS","blue")
 save_plot(wd_mean_cit_top_categories$plot,df_wos_labels,"WoS","wd_mean_cit_top_categories")
 add_datasheet_to_excel(wd_mean_cit_top_categories,"wd_mean_cit_top_categories",outputfile)
-
-# 9. Experimental: Boxplot-test-version: Citation-distribution within WoS-categories. Limited to a single NPI-category. 
-# plot_cit_category_boxplot_wos <- plot_citation_category_box(df_wos_analysis,df_wos_labels,"Clinical medicine","WoS","blue")
-# save_plot(plot_cit_category_boxplot_wos,df_wos_labels,"WoS","9_plot_cit_category_boxplot")
 
 # 10. Percentile-distribution within all wos-categories connected to a single NPI-discipline. Perspective from WoS-data.
 wd_percentiles <- plot_citation_percentiles(df_wos_analysis,df_wos_labels,npi_category,"WoS","blue")
