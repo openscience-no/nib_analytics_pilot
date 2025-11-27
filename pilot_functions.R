@@ -272,7 +272,7 @@ add_datasheet_to_excel <- function(datalist,sheet_name, filepath) {
 #-----------------------------
 
 # Prep a) Creates either a full dataset as limited and downloaded from NIB, or limited further by institution. 
-create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, year_first,year_last) {
+create_data_set <- function(nib_items,df_cri_oa_nib,limit_code) {
   
   if (limit_code=="Norway") { # National scope, no limiting
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
@@ -414,6 +414,9 @@ save_plot <- function(plot,analysis_data_labels,db,nr_type) {
 # 1. Plot for yearly counts of articles
 plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_colour) {
   
+  # Set method of time-filtering for information in plot
+  year_filtering <- "cri_year"
+    
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
   
@@ -492,7 +495,7 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_co
                         analysis_data_labels$year_first, "-", 
                         analysis_data_labels$year_last, ")"),
       caption = paste0("Total no. publications used as basis for plot: ", 
-                       n_records_basis,"\n(data: ", db, ")"),
+                       n_records_basis,"\n(data: ", db, ", filtering on year:",year_filtering,")"),
       x = paste0("Year of publication (", db, ")"),
       y = "Number of publications"
     )
@@ -521,6 +524,9 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -573,7 +579,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. journals/publications used as basis for plot:", n_journals,"/",n_records_basis," \n(data: ", db, ")", sep=""),
+      caption = paste("Total no. journals/publications used as basis for plot:", n_journals,"/",n_records_basis," \n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       y = "Journal",
       x = "No. publications") +
@@ -604,6 +610,9 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -653,7 +662,7 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis, "\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis, "\n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "No. publications",
       y= "Country") +
@@ -682,6 +691,9 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colou
   
   oa_ordered_levels_seven = (c("diamond","gold", "hybrid","hybrid_deal","green","deposited","closed"))
   oa_color_map_seven <- scale_fill_manual(values=c("lightblue3", "gold","gold3","gold4", "palegreen4","grey50","grey65"))
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "cri_year_reported"
   
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
@@ -735,7 +747,7 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colou
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "Year of publication (reported-year)",
       y= "Percent of articles") 
@@ -767,6 +779,9 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -812,7 +827,7 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "No. publications/fractions",
       y= "Author") +
@@ -843,6 +858,9 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -888,7 +906,7 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "No. publications/fractions",
       y= "Author") +
@@ -918,6 +936,9 @@ plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_n
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -960,7 +981,7 @@ plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_n
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "No. citations",
       y= "Category") +
@@ -990,6 +1011,9 @@ plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, in
   # Set bg-color to green if chosen, else set to blue
   theme_colour <- "#CFDEEC"
   if (pick_colour=="green") theme_colour <- "#CFECDE"
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "year_of_publication"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -1037,7 +1061,7 @@ plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, in
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "Share (in %)",
       y= "category") +
@@ -1070,6 +1094,9 @@ plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,pi
   # Set palett for OA-categories
   oa_ordered_levels_seven = (c("diamond","gold", "hybrid","hybrid_deal","green","deposited","closed"))
   oa_color_map_seven <- scale_fill_manual(values=c("lightblue3", "gold","gold3","gold4", "palegreen4","grey50","grey65"))
+  
+  # Set method of time-filtering for information in plot
+  year_filtering <- "cri_year"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -1118,7 +1145,7 @@ plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,pi
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),
-      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db, ")", sep=""),
+      caption = paste("Total no. publications used as basis for plot:", n_records_basis,"\n(data: ", db,  ", filtering on year:",year_filtering,")"),
       tag = waiver(),
       x = "OA-type",
       y= "number of citations") +
