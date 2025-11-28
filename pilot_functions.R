@@ -25,9 +25,11 @@ library("tidyverse")
 library("ggthemes")
 library("openxlsx")
 
-# Default scope 
+# Default scopes 
+year_first <- 2014
+year_last  <- 2024
 scope <- "Norway" # Full set (default)
-
+nvi_scope   <- "all"    # Full set (default)
 #-------------------
 # Functions for inventory of data (duplicated from func_match_inventory_format_write.R)
 #-------------------
@@ -41,7 +43,7 @@ match_inventory_cris_wos <- function(cris_wos_df,col_id) {
   # !!paste0(name_old,"_items_uid_count"):=db_old_items_uid_count
   # "col_a" %in% names(my_tibble)
   
-  # Sette parametere på uid-unique_id og skriv-ut
+  # Sette parametere pC% uid-unique_id og skriv-ut
   
   
   # Total numbers both total and  matched 
@@ -272,7 +274,7 @@ add_datasheet_to_excel <- function(datalist,sheet_name, filepath) {
 #-----------------------------
 
 # Prep a) Creates either a full dataset as limited and downloaded from NIB, or limited further by institution. 
-create_data_set <- function(nib_items,df_cri_oa_nib,limit_code) {
+create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, limit_nvi) {
   
   if (limit_code=="Norway") { # National scope, no limiting
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
@@ -281,7 +283,7 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code) {
   } else if (limit_code=="RCN") {  # Hack for limiting to records financed by RCN
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
       left_join(nib_items, by="cri_id",relationship = "many-to-many") %>%
-      filter(cri_funder=="Norges forskningsråd")
+      filter(cri_funder=="Norges forskningsrC%d")
     print("Scope = 'RCN'")
   } else if (stringr::str_length(as.integer(limit_code))>2) { # Limiting to institution by id eg. "185" for UiO
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
@@ -296,10 +298,15 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code) {
     return()
   }
   
-  # Crude filtering without checking values. Will work technically
-  #nib_lim_merge_nva_full <-nib_lim_merge_nva_full %>% 
-  #  filter(year_of_publication >= year_first) %>% 
-  #  filter(year_of_publication <= year_last)
+# limit to NVI or NVI-articles
+  if (limit_nvi=="NVI") {
+    nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
+      filter(cri_nvi_subset==TRUE)
+  } else if (limit_nvi=="NVI-articles") {
+    nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
+      filter(cri_nvi_subset==TRUE,cri_category_type == "Artikkel")
+  } # End limit
+  
   print("Setting oa-colors in dataset")
   # Simplifying some OA-info by mapping categories
   nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
@@ -329,7 +336,7 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code) {
 } # End function
 
 # Prep b) Once dataset is limited and ready for use, this function creates useful labels,later to be used in plots
-create_labels <- function(nib_lim_merge_nva_full,limit_code, year_first,year_last) {
+create_labels <- function(nib_lim_merge_nva_full,limit_code,nvi_scope, year_first,year_last) {
   inst <- NA
   
   if (limit_code=="Norway") { # National scope, no limiting
@@ -352,6 +359,7 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code, year_first,year_las
                  institution = inst,
                  year_first  = year_first,
                  year_last   = year_last,
+                 nvi_scope = nvi_scope,
                  timespan_low=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
                    arrange(year_of_publication) %>% 
