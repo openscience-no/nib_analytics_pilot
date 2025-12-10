@@ -3,8 +3,8 @@
 # OPENALEX - VERSION
 #-------------------------------------------------------------------
 # Prerequisites: 
-#    nib-postgres-account to either wos or openalex, or both
-#    IP is allowed entry at the NIB-server
+#    nib-postgres-account to openalex
+#    IP is allowed entry to the NIB-server
 #    If pc is located in Sikt; edu-vpn
 #
 # In short: the script 
@@ -20,8 +20,9 @@
 
 # As a general rule:
 #  - Some analyses disregards time-information, and treats data as a single set
-#  - If time-series are used, analysis will use reported_year (cris-data) as default and thus naturally limit the dataset to NVI-data
-#  - If citation-based indicators are used, published_year from WoS will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
+#  - In time-series, make note of which "year-info" that is used
+#      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVI-data. Cri_year is also used
+#      - If citation-based indicators are used, published_year from WoS will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
 #  - Disciplinary groupings (categories) will use taxonomies from WoS (as indicators are connected to these), naturally limiting the dataset to only matched records.
 
 # Also note that NONE of the analysis are verified, results and plots should therefore not be used for other than illustration purposes.
@@ -35,7 +36,7 @@ source("pilot_functions.R")
 
 # Load Cristin-data from disk. (Must be located in the "/data"-folder).
 # Selection of data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
-# Do not load data if variable already exists.
+# Skip load data if variable already exists.
 ifelse(exists("df_cri_oa_nib"),
        print("df_cri_oa_nib allready loaded"), 
        df_cri_oa_nib <- read.csv("data/df_cri_oa_nib.csv"))
@@ -124,9 +125,9 @@ saveRDS(opa_records,"data/raw/opa_records.rds")
 # Information-labels are also for use in plots (full institution name, time-span,total number of publications etc.)
 
 # Set scope for OpenAlex-data and join in cristin-info:
-df_opa_analysis <- create_data_set(opa_records,df_cri_oa_nib,scope) %>% 
+df_opa_analysis <- create_data_set(opa_records,df_cri_oa_nib,scope,nvi_scope) %>% 
   as_tibble()
-df_opa_labels   <- create_labels(df_opa_analysis,scope,year_first,year_last)
+df_opa_labels   <- create_labels(df_opa_analysis,scope,nvi_scope,year_first,year_last)
 
 # -----------------------------------------
 #   Create inventory
@@ -161,31 +162,26 @@ npi_category <- "Engineering"
 
 # 1. Basic yearly counts of publications in the dataset
 # Parameters: scoped df to plot, labels to plot, datasource, background-colour in plot (either "Blue" or "green")
-plot_basic_opa <- plot_basic_counts(df_opa_analysis,df_opa_labels,"OpenAlex","green") # OpenAlex
-save_plot(plot_basic_opa,df_opa_labels,"OpenAlex","1_basic_numbers_opa")
-
+opa_basic_numbers <- plot_basic_counts(df_opa_analysis,df_opa_labels,"OpenAlex","green") # OpenAlex
+save_plot(opa_basic_numbers$plot,df_opa_labels,"Cris","opa_basic_numbers")
+add_datasheet_to_excel(opa_basic_numbers,"opa_basic_numbers",outputfile)
 
 # 2. Most used journals
-plot_top_publ_journals_opa <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex","green")
-save_plot(plot_top_publ_journals_opa,df_opa_labels,"OpenAlex","2_top_publ_journals_opa")
-
+opa_top_journals <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex","green")
+save_plot(opa_top_journals$plot,df_opa_labels,"OpenAlex","opa_top_journals")
+add_datasheet_to_excel(opa_top_journals,"opa_top_journals",outputfile)
 
 # 3. Countries with most cooperation
 # (Not ready)
 
 # 4. OA-distribution
 # OpenAlex:
-plot_oa_distribution_opa <- plot_oa_shares(df_opa_analysis,df_opa_labels,"OpenAlex","green")
-save_plot(plot_oa_distribution_opa,df_opa_labels,"OpenAlex","4_oa_distribution_opa")
-
-
+opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris","green")
+save_plot(opa_oa_distribution$plot,df_opa_labels,"Cris","opa_oa_distribution")
+add_datasheet_to_excel(opa_oa_distribution,"opa_oa_distribution",outputfile)
 #------------------------------------------------
 #  Analysis - Authors
 #------------------------------------------------
-
-# 5. Avg-author-count per year in each NPI-category (as given by source/journal)
-plot_number_of_authors_opa <- plot_no_authors(df_opa_analysis,df_opa_labels,"OpenAlex","green")
-save_plot(plot_number_of_authors_opa,df_opa_labels,"OpenAlex","5_number_of_authors")
 
 # 6. Most productive authors by number of publications
 # (Not ready)
