@@ -88,10 +88,6 @@ nib_connection <- DBI::dbConnect(RPostgres::Postgres(),
 wos_items_raw <-    DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_wos_items") %>% 
   as_tibble()
 
-# Retrieve fundings from WoS
-wos_fundings_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_wos_fundings") %>% 
-  as_tibble()
-
 # Retrieve authorinfo from WoS
 wos_authorinfo_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_wos_authorinfo") %>% 
   as_tibble() %>% 
@@ -101,6 +97,11 @@ wos_authorinfo_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv
 # Retrieve authorinfo in details (tidyformat) from WoS
 wos_authordetails_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_wos_authordetails") %>% 
   as_tibble()
+
+# The below query (commented out) retrieve fundings from WoS
+# wos_fundings_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_wos_fundings") %>% 
+#  as_tibble()
+
 
 # The below query (commented out) Retrieves the underlying SQL used to create 'materialized views' fetched from WoS.
 # May be useful if user need to change the scope of records or other tweaks.
@@ -126,9 +127,9 @@ wos_records <- wos_items_raw %>%
 
 # Save data in folder /data/raw/ for later use
 saveRDS(wos_items_raw,"data/raw/wos_items_raw.rds")
-saveRDS(wos_fundings_raw,"data/raw/wos_fundings_raw.rds")
 saveRDS(wos_authorinfo_raw,"data/raw/wos_authorinfo_raw.rds")
 saveRDS(wos_authordetails_raw,"data/raw/wos_authordetails_raw.rds")
+#saveRDS(wos_fundings_raw,"data/raw/wos_fundings_raw.rds")
 saveRDS(wos_records,"data/raw/wos_records.rds")
 
 #-----------------------------------

@@ -85,11 +85,19 @@ nib_connection <- DBI::dbConnect(RPostgres::Postgres(),
 opa_works_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_works") %>% 
   as_tibble()
 
-# Retrieve authorinfo from OpenAlex
+# Retrieve authorinfo 
 opa_authorinfo_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_authorinfo") %>% 
   as_tibble() %>% 
   mutate(no_authors=as.double(no_authors),
          no_author_shares=as.double(no_author_shares))
+
+# Retrieve authorinfo in details (tidyformat) 
+opa_authordetails_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_authordetails") %>% 
+  as_tibble()
+
+# The below query (commented out) retrieve fundings from WoS
+# opa_fundings_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_fundings") %>% 
+#  as_tibble()
 
 # The below query (commented out) Retrieves the underlying SQL used to create 'materialized views' fetched from OpenAlex
 # May be useful if user need to change the scope of records or other tweaks.
@@ -115,6 +123,8 @@ opa_records <- opa_works_raw %>%
 # Save data in folder /data/raw/ for later use
 saveRDS(opa_works_raw,"data/raw/opa_works_raw.rds")
 saveRDS(opa_authorinfo_raw,"data/raw/opa_authorinfo_raw.rds")
+saveRDS(opa_authordetails_raw,"data/raw/opa_authordetails_raw.rds")
+# saveRDS(opa_fundings_raw,"data/raw/opa_fundings_raw.rds")
 saveRDS(opa_records,"data/raw/opa_records.rds")
 
 #-----------------------------------
@@ -160,8 +170,7 @@ npi_category <- "Engineering"
 #  Analysis - basic numbers
 #------------------------------------------------
 
-# 1. Basic yearly counts of publications in the dataset
-# Parameters: scoped df to plot, labels to plot, datasource, background-colour in plot (either "Blue" or "green")
+# 1. Basic yearly counts of publications in the dataset. Perspective from cris-data
 opa_basic_numbers <- plot_basic_counts(df_opa_analysis,df_opa_labels,"OpenAlex","green") # OpenAlex
 save_plot(opa_basic_numbers$plot,df_opa_labels,"Cris","opa_basic_numbers")
 add_datasheet_to_excel(opa_basic_numbers,"opa_basic_numbers",outputfile)
@@ -195,10 +204,6 @@ add_datasheet_to_excel(opa_oa_distribution,"opa_oa_distribution",outputfile)
 
 # 8. Geom_point: Mean n citations in n number of WoS-categories 
 # (Not ready)
-
-# 9. Experimental: Boxplot-test-version: Citation-distribution within WoS-categories. Limited to a single NPI-category. 
-# (Not ready)
-
 
 # 10. Percentile-distribution within  a single NIB-category.
 # (Not ready)
