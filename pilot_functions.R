@@ -783,9 +783,10 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
   # Limited dataset within current timespan
   lim_data_set <- analysis_data_set %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>%   
-    select(cri_id, year_of_publication)
+    select(cri_id, year_of_publication) %>% 
+    distinct()
   
-  # Create final dataset by limiting authordetails by  publications only within the given timeframe
+  # Create final dataset by limiting authordetails by publications within the given timeframe
   author_data <- lim_data_set %>% 
     left_join(authordetails, relationship = "many-to-many", by="cri_id") %>% 
     filter(toupper(country)=="NORWAY") %>% # Selecting 
@@ -858,7 +859,8 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
   # Limited dataset within current timespan
   lim_data_set <- analysis_data_set %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>%   
-    select(cri_id, year_of_publication)
+    select(cri_id, year_of_publication) %>% 
+    distinct()
   
   # Sorted by fraction instead of number of publications
   author_f_data <- lim_data_set %>% 

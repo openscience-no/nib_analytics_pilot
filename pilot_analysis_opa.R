@@ -182,18 +182,18 @@ save_plot(opa_basic_numbers$plot,df_opa_labels,"Cris","opa_basic_numbers")
 add_datasheet_to_excel(opa_basic_numbers,"opa_basic_numbers",outputfile)
 
 # 2. Most used journals
-opa_top_journals <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex",themecolors[2])
+opa_top_journals <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex",themecolours[2])
 save_plot(opa_top_journals$plot,df_opa_labels,"OpenAlex","opa_top_journals")
 add_datasheet_to_excel(opa_top_journals,"opa_top_journals",outputfile)
 
 # 3. Countries with most cooperation. 
-opa_top_contries <- plot_top_countries(df_opa_analysis,df_opa_labels, opa_authordetails_raw, 40,"OpenAlex",themecolors[2])
+opa_top_contries <- plot_top_countries(df_opa_analysis,df_opa_labels, opa_authordetails_raw, 40,"OpenAlex",themecolours[2])
 save_plot(opa_top_contries$plot,df_opa_labels,"OpenAlex","opa_top_contries")
 add_datasheet_to_excel(opa_top_contries,"opa_top_contries",outputfile)
 
 
 # 4. OA-distribution
-opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris",themecolors[3])
+opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris",themecolours[3])
 save_plot(opa_oa_distribution$plot,df_opa_labels,"Cris","opa_oa_distribution")
 add_datasheet_to_excel(opa_oa_distribution,"opa_oa_distribution",outputfile)
 #------------------------------------------------
@@ -201,12 +201,12 @@ add_datasheet_to_excel(opa_oa_distribution,"opa_oa_distribution",outputfile)
 #------------------------------------------------
 
 # 6. Most productive authors by number of publications. 
-opa_top_authors_count <- plot_top_authors_count(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolors[2]) 
+opa_top_authors_count <- plot_top_authors_count(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolours[2]) 
 save_plot(opa_top_authors_count$plot,df_opa_labels,"OpenAlex","opa_top_authors_count")
 add_datasheet_to_excel(opa_top_authors_count,"opa_top_authors_count",outputfile)
 
 # 7. Most productive authors by fractions. 
-opa_top_authors_fraction <- plot_top_authors_fraction(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolors[2])
+opa_top_authors_fraction <- plot_top_authors_fraction(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolours[2])
 save_plot(opa_top_authors_fraction$plot,df_opa_labels,"OpenAlex","opa_top_authors_fraction")
 add_datasheet_to_excel(opa_top_authors_fraction,"opa_top_authors_fraction",outputfile)
 #------------------------------------------------
@@ -221,7 +221,7 @@ add_datasheet_to_excel(opa_top_authors_fraction,"opa_top_authors_fraction",outpu
 
 
 # 11. Experimental: Citation-distribution on OA per NIB-category
-opa_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_opa_analysis,df_opa_labels,"Cris/OpenAlex", themecolors[2])
+opa_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_opa_analysis,df_opa_labels,"Cris/OpenAlex", themecolours[2])
 save_plot(opa_oa_cit_distribution_npi_area$plot,df_opa_labels,"Cris-OpenAlex","opa_oa_cit_distribution_npi_area")
 add_datasheet_to_excel(opa_oa_cit_distribution_npi_area,"opa_oa_cit_dist_npi_area",outputfile)
 
