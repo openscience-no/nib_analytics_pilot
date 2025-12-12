@@ -54,7 +54,7 @@ scope <- "Norway" # Full set (default)
 # Use the codes "all", NVI" or "NVI-articles" 
 # For example: nvi_scope   <- "NVI-articles"
 # NB: this choice has significant bearings on all inventories and analysis as the share of matched records is depended on the variable 
-nvi_scope   <- "NVI-articles"    # Unless set, default is set to "all"
+nvi_scope   <- "All"    # Unless set, default is set to "all"
 
 # Set year-span, which defaults to "2014" and "2024". Year_first can not be set older than 2010. 
 # The limitaton will not take place in the initial creation of
@@ -136,7 +136,7 @@ saveRDS(wos_records,"data/raw/wos_records.rds")
 # Preparation of final data-set
 #-----------------------------------
 # At this point we have raw datasets with records from wos, which is limited by previously matched cris-records.
-# Next step is to join in cris-data into a final  data-set
+# Next step is to join data with cris-data into a final data-set
 # Information-labels are also created for use in plots (full institution name, time-span,total number of publications etc.)
 
 # Set scope for WOS-data and join in cristin-info: 
@@ -151,7 +151,7 @@ df_wos_labels   <- create_labels(df_wos_analysis,scope,nvi_scope, year_first,yea
 
 col_id <-"unique_id" # Setting a variable for which column contains unique id. (Due to that the function can be used for other datasets from other sources).
 outputfile <- paste0("plots/wos_inventory_",scope,"_",lubridate::today(),".xlsx")
-df_wos_analysis_inventory <- match_inventory_cris_wos(df_wos_analysis, col_id)
+df_wos_analysis_inventory <- match_inventory_cris(df_wos_analysis, col_id)
 format_inventory_and_write_xlsx(df_wos_analysis_inventory, outputfile)
 
 # Summary of different parameters that can be used in the different analyses. 
@@ -159,10 +159,11 @@ format_inventory_and_write_xlsx(df_wos_analysis_inventory, outputfile)
 # - df_wos_analysis = scoped df to plot, 
 # - df_wos_labels= labels to plot, 
 # - Main data-source= "Wos", "Cris" of "Cris/WoS"
-# - Background-colour in plot= "Blue" or "green")
 # - Number of elements (cutoff) = ~10-50
 # - wos_authordetails_raw = authors as represented in WoS
 # - NPI-category = here set to "Engineering". Used in plot nr. 10
+# - Themecolour = Background-colour can be set with a predefined colours set in themecolours (t.ex. themecolours[1]) or a hex-code
+
 npi_category <- "Engineering"
 
 # All analysis are performed in three steps: 
@@ -175,22 +176,22 @@ npi_category <- "Engineering"
 #------------------------------------------------
 
 # 1. Basic yearly counts of publications in the dataset. Perspective from cris-data
-wd_basic_numbers <- plot_basic_counts(df_wos_analysis,df_wos_labels,"Cris", "blue") # WoS
+wd_basic_numbers <- plot_basic_counts(df_wos_analysis,df_wos_labels,"Cris", themecolours[3]) 
 save_plot(wd_basic_numbers$plot,df_wos_labels,"Cris","wd_basic_numbers")
 add_datasheet_to_excel(wd_basic_numbers,"wd_basic_numbers",outputfile)
 
 # 2. Most used journals. Perspective from WoS-data
-wd_top_journals <- plot_top_journals(df_wos_analysis,df_wos_labels,40,"WoS", "blue")
+wd_top_journals <- plot_top_journals(df_wos_analysis,df_wos_labels,40,"WoS", themecolours[1])
 save_plot(wd_top_journals$plot,df_wos_labels,"WoS","wd_top_journals")
 add_datasheet_to_excel(wd_top_journals,"wd_top_journals",outputfile)
 
 # 3. Countries with most cooperation. Perspective from WoS-data
-wd_top_contries <- plot_top_countries(df_wos_analysis,df_wos_labels, wos_authordetails_raw, 40,"WoS","blue")
+wd_top_contries <- plot_top_countries(df_wos_analysis,df_wos_labels, wos_authordetails_raw, 40,"WoS",themecolours[1])
 save_plot(wd_top_contries$plot,df_wos_labels,"WoS","wd_top_contries")
 add_datasheet_to_excel(wd_top_contries,"wd_top_contries",outputfile)
 
 # 4. OA-distribution. Perspective from cris-data
-wd_oa_distribution <- plot_oa_shares(df_wos_analysis,df_wos_labels,"Cris", "blue")
+wd_oa_distribution <- plot_oa_shares(df_wos_analysis,df_wos_labels,"Cris",themecolours[3])
 save_plot(wd_oa_distribution$plot,df_wos_labels,"Cris","wd_oa_distribution")
 add_datasheet_to_excel(wd_oa_distribution,"wd_oa_distribution",outputfile)
 
@@ -199,12 +200,12 @@ add_datasheet_to_excel(wd_oa_distribution,"wd_oa_distribution",outputfile)
 #------------------------------------------------
 
 # 6. Most productive authors by number of publications. Perspective from WoS-data
-wd_top_authors_count <- plot_top_authors_count(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS","blue") 
+wd_top_authors_count <- plot_top_authors_count(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS",themecolours[1]) 
 save_plot(wd_top_authors_count$plot,df_wos_labels,"WoS","wd_top_authors_count")
 add_datasheet_to_excel(wd_top_authors_count,"wd_top_authors_count",outputfile)
 
 # 7. Most productive authors by fractions. Perspective from WoS-data
-wd_top_authors_fraction <- plot_top_authors_fraction(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS","blue")
+wd_top_authors_fraction <- plot_top_authors_fraction(df_wos_analysis,df_wos_labels,wos_authordetails_raw,40,"WoS",themecolours[1])
 save_plot(wd_top_authors_fraction$plot,df_wos_labels,"WoS","wd_top_authors_fraction")
 add_datasheet_to_excel(wd_top_authors_fraction,"wd_top_authors_fraction",outputfile)
 
@@ -213,17 +214,17 @@ add_datasheet_to_excel(wd_top_authors_fraction,"wd_top_authors_fraction",outputf
 #------------------------------------------------
 
 # 8. Mean number citations in max n number of top WoS-categories. Perspective from WoS-data 
-wd_mean_cit_top_categories <- plot_citation_category(df_wos_analysis,df_wos_labels,40,"WoS","blue")
+wd_mean_cit_top_categories <- plot_citation_category(df_wos_analysis,df_wos_labels,40,"WoS",themecolours[1])
 save_plot(wd_mean_cit_top_categories$plot,df_wos_labels,"WoS","wd_mean_cit_top_categories")
 add_datasheet_to_excel(wd_mean_cit_top_categories,"wd_mean_cit_top_categories",outputfile)
 
 # 10. Percentile-distribution within all wos-categories connected to a single NPI-discipline. Perspective from WoS-data.
-wd_percentiles <- plot_citation_percentiles(df_wos_analysis,df_wos_labels,npi_category,"WoS","blue")
+wd_percentiles <- plot_citation_percentiles(df_wos_analysis,df_wos_labels,npi_category,"WoS",themecolours[1])
 save_plot(wd_percentiles$plot,df_wos_labels,"WoS","wd_percentiles")
 add_datasheet_to_excel(wd_percentiles,"wd_percentiles",outputfile)
 
 # 11. Citation-distribution on OA per NPI-category. Perspective from Cris/WoS-data
-wd_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_wos_analysis,df_wos_labels,"Cris/WoS", "blue")
+wd_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_wos_analysis,df_wos_labels,"Cris/WoS", themecolours[1])
 save_plot(wd_oa_cit_distribution_npi_area$plot,df_wos_labels,"Cris-WoS","wd_oa_cit_distribution_npi_area")
 add_datasheet_to_excel(wd_oa_cit_distribution_npi_area,"wd_oa_cit_distribution_npi_area",outputfile)
 

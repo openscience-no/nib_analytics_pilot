@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------
 # Step 0: Load data and check dependencies
 #-------------------------------------------------------------------
-Sys.setlocale("LC_ALL") # A precaution
+Sys.setlocale("LC_ALL") # A precaution for some systems
 
 # Libraries used in the pilot
 c("tidyverse", "RPostgres","ggthemes","stringr","cowplot","openxlsx")
@@ -30,12 +30,13 @@ year_first <- 2014
 year_last  <- 2024
 scope <- "Norway" # Full set (default)
 nvi_scope   <- "all"    # Full set (default)
+themecolours <- c( '#CFDEEC','#CFECDE','#ECECD0') # used for plotbackgrounds. 1. WoS, 2. OpenAlex,3.Cris
 #-------------------
 # Functions for inventory of data (duplicated from func_match_inventory_format_write.R)
 #-------------------
 
 # Function for creating an inventory of a dataset with joined data from cris and wos
-match_inventory_cris_wos <- function(cris_wos_df,col_id) {
+match_inventory_cris <- function(cris_wos_df,col_id) {
   
   cris_wos_df <- cris_wos_df %>% 
     rename(unique_id:= !!col_id)
@@ -420,17 +421,13 @@ save_plot <- function(plot,analysis_data_labels,db,nr_type) {
 # Functions for plots
 #-----------------------------
 # 1. Plot for yearly counts of articles
-plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_colour) {
+plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, theme_colour) {
   
   # Set method of time-filtering for information in plot
   year_filtering <- "cri_year"
     
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -527,11 +524,8 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, pick_co
 } # End function
 
 # 2. Top n journals by number of articles
-plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_journals,db, pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_journals,db, theme_colour) {
+
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
@@ -613,11 +607,7 @@ plot_top_journals <- function(analysis_data_set,analysis_data_labels, max_no_jou
 } # End function
 
 # 3. Top n countries in articles-cooperation 
-plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_countries,db, pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_countries,db, theme_colour) {
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
@@ -635,7 +625,7 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
     mutate(country=replace_na(country,"unknown")) %>% 
     distinct()
   
-  
+
   # Final dataset joining in country-info
   country_data <- analysis_data_set %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>%   
@@ -643,6 +633,7 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
     distinct() %>% 
     left_join(wad,by="cri_id") %>%     
     filter(country!="NORWAY") %>% 
+    filter(country!="Norway") %>% 
     filter(country!="unknown") %>% 
     group_by(country) %>% 
     summarise(n=n_distinct(cri_id)) %>% 
@@ -695,7 +686,7 @@ plot_top_countries <- function(analysis_data_set,analysis_data_labels,authordeta
 } # End function
 
 # 4. Shares of oa-categories per year
-plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colour) {
+plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, theme_colour) {
   
   oa_ordered_levels_seven = (c("diamond","gold", "hybrid","hybrid_deal","green","deposited","closed"))
   oa_color_map_seven <- scale_fill_manual(values=c("lightblue3", "gold","gold3","gold4", "palegreen4","grey50","grey65"))
@@ -705,10 +696,6 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colou
   
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
@@ -779,19 +766,15 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, pick_colou
 } # End function
 
 # 6. Top n most productive authors measured by number of publications
-plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_auth,db, pick_colour) {
+plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_auth,db, theme_colour) {
   
-  # Authorlists by number of publications and fractions. Includes only authorshares 
-  # affiliated with "NORWAY". An author could thus have affilations to a foreign institution (exclusively), these are not counted.
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+  # Top n author-list by number of publications and fractions. Includes only authorshares 
+  # affiliated with "NORWAY". An author could thus have affiliations to a foreign institution (exclusively), these are not counted.
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
   
-  # Calculating number of records which forms basis for current analysis
+  # Calculating number of records that forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
     ungroup() %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>% 
@@ -805,7 +788,7 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
   # Create final dataset by limiting authordetails by  publications only within the given timeframe
   author_data <- lim_data_set %>% 
     left_join(authordetails, relationship = "many-to-many", by="cri_id") %>% 
-    filter(country=="NORWAY") %>% 
+    filter(toupper(country)=="NORWAY") %>% # Selecting 
     select(cri_id,author_full_name,no_authors) %>% 
     distinct() %>% 
     mutate(fraction_val=1/no_authors) %>% 
@@ -861,11 +844,7 @@ plot_top_authors_count <- function(analysis_data_set,analysis_data_labels,author
 } # End function
 
 # 7. Top n most productive authors measured by fractional summaries
-plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_auth,db, pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,authordetails, max_no_auth,db, theme_colour) {
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
@@ -884,7 +863,7 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
   # Sorted by fraction instead of number of publications
   author_f_data <- lim_data_set %>% 
     left_join(authordetails, relationship = "many-to-many", by="cri_id") %>% 
-    filter(country=="NORWAY") %>% 
+    filter(toupper(country)=="NORWAY") %>% 
     select(cri_id,author_full_name,no_authors) %>% 
     distinct() %>% 
     mutate(fraction_val=1/no_authors) %>% 
@@ -939,11 +918,7 @@ plot_top_authors_fraction <- function(analysis_data_set,analysis_data_labels,aut
 } # End function
 
 # 8. Mean number of citations in top n categories
-plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_no_categories,db,pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_no_categories,db,theme_colour) {
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
@@ -1014,11 +989,7 @@ plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_n
 } # End function
 
 # 10. Shares of publication that sits  within the 10,25 and 50-percentile
-plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, input_category,db,pick_colour) {
-  
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, input_category,db,theme_colour) {
   
   # Set method of time-filtering for information in plot
   year_filtering <- "year_of_publication"
@@ -1032,7 +1003,7 @@ plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, in
   # Percentile-distribution
   percentile_data <- analysis_data_set %>% 
     filter(year_of_publication <= analysis_data_labels$year_last, year_of_publication >=analysis_data_labels$year_first) %>%   
-    filter(nib_category==input_category) %>% #"Clinical medicine"
+    filter(nib_category==input_category) %>% 
     select(cri_id,category_avg_percentil,category) %>% 
     filter(!is.na(category)) %>% 
     distinct() %>% 
@@ -1094,10 +1065,7 @@ plot_citation_percentiles <- function(analysis_data_set,analysis_data_labels, in
 } # End function
 
 # 11. Summary of citation-impact per oa-category
-plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,pick_colour) {
-  # Set bg-color to green if chosen, else set to blue
-  theme_colour <- "#CFDEEC"
-  if (pick_colour=="green") theme_colour <- "#CFECDE"
+plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,theme_colour) {
   
   # Set palett for OA-categories
   oa_ordered_levels_seven = (c("diamond","gold", "hybrid","hybrid_deal","green","deposited","closed"))

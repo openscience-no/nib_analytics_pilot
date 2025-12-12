@@ -9,12 +9,12 @@
 #
 # In short: the script 
 # - Loads a predefined cris-data-set (to be replaced with live download of data through an api)
-# - Query WoS-database and fetch a predefined dataset containing previously cris-matched data with citation and indicator-info
+# - Query OpenAlex-database and fetch a predefined dataset containing previously cris-matched data with citation and indicator-info
 # - The two datasets are joined
 # - The dataset can initially be further limited to t.ex a single institution
 # - Set a time-span, which is utilized within each analysis
 
-# Please note that some of the test-analyses choose info from either the cris or from WoS, this is particularly
+# Please note that some of the test-analyses choose info from either the cris or from OpenAlex, this is particularly
 # important with respect to info laid out in time series. It is therefore important to understand
 # the consequences of choices in each analyses and to what extent records are discarded from the dataset 
 
@@ -22,8 +22,8 @@
 #  - Some analyses disregards time-information, and treats data as a single set
 #  - In time-series, make note of which "year-info" that is used
 #      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVI-data. Cri_year is also used
-#      - If citation-based indicators are used, published_year from WoS will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
-#  - Disciplinary groupings (categories) will use taxonomies from WoS (as indicators are connected to these), naturally limiting the dataset to only matched records.
+#      - If citation-based indicators are used, published_year from OpenAlex will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
+#  - Disciplinary groupings (categories) will use taxonomies from OpenAlex (as indicators are connected to these), naturally limiting the dataset to only matched records.
 
 # Also note that NONE of the analysis are verified, results and plots should therefore not be used for other than illustration purposes.
 # Consider clearing the environment with
@@ -51,12 +51,13 @@ scope <- "Norway" # Full set (default)
 # NVI-reported or NVI-reported articles. 
 # Use the codes "NVI" or "NVI-articles" 
 # Fore example nvi_scope   <- "NVI-articles"
+# NB: this choice has significant bearings on all inventories and analysis as the share of matched records is depended on the variable 
 nvi_scope   <- "all"    # Full set (default)
 
 # Set year-span, which defaults to "2014" and "2024". Year_first can not be set older than 2010. 
 # The limitaton will not take place in the initial creation of
 # the dataset, but the values are are used for limiting the dataset in the analysis by either:
-#  1. year_of_publication (WoS). Found on all records that are matched
+#  1. year_of_publication (OpenAlex). Found on all records that are matched
 #  2. cri_year (cris). Found on all records in cris
 #  3. Cri year_reported(cris). Found only on NVI-reported records
 
@@ -93,9 +94,13 @@ opa_authorinfo_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv
 
 # Retrieve authorinfo in details (tidyformat) 
 opa_authordetails_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_authordetails") %>% 
+  group_by(cri_id) %>%
+  mutate(no_authors=n(),
+         no_author_shares=n_distinct(author_full_name)) %>% 
+  ungroup() %>% 
   as_tibble()
 
-# The below query (commented out) retrieve fundings from WoS
+# The below query (commented out) retrieve fundings from OpenAlex
 # opa_fundings_raw <- DBI::dbGetQuery(nib_connection,"SELECT * FROM nib_views.mv_opa_fundings") %>% 
 #  as_tibble()
 
@@ -137,7 +142,7 @@ saveRDS(opa_records,"data/raw/opa_records.rds")
 # Set scope for OpenAlex-data and join in cristin-info:
 df_opa_analysis <- create_data_set(opa_records,df_cri_oa_nib,scope,nvi_scope) %>% 
   as_tibble()
-df_opa_labels   <- create_labels(df_opa_analysis,scope,nvi_scope,year_first,year_last)
+df_opa_labels   <- create_labels(df_opa_analysis,scope, nvi_scope,year_first,year_last)
 
 # -----------------------------------------
 #   Create inventory
@@ -147,18 +152,18 @@ df_opa_labels   <- create_labels(df_opa_analysis,scope,nvi_scope,year_first,year
 
 col_id <-"unique_id" # Setting a variable for which column is unique id, since the function can be used for other datasets.
 outputfile <- paste0("plots/opa_inventory_",scope,"_",lubridate::today(),".xlsx")
-df_opa_analysis_inventory <- match_inventory_cris_wos(df_opa_analysis, col_id)
+df_opa_analysis_inventory <- match_inventory_cris(df_opa_analysis, col_id)
 format_inventory_and_write_xlsx(df_opa_analysis_inventory, outputfile)
 
 # Summary of different parameters that can be used in the different analyses. 
 # The first four are mandatory in all analysis 
-# - df_wos_analysis = scoped df to plot, 
-# - df_wos_labels= labels to plot, 
-# - Main data-source= "Wos", "Cris" of "Cris/WoS"
-# - Background-colour in plot= "Blue" or "green")
+# - df_opa_analysis = scoped df to plot, 
+# - df_opa_labels= labels to plot, 
+# - Main data-source= "OpenAlex", "Cris" of "Cris/OpenAlex"
 # - Number of elements (cutoff) = ~10-50
-# - wos_authordetails_raw = authors as represented in WoS
+# - opa_authordetails_raw = authors as represented in OpenAlex
 # - NPI-category = here set to "Engineering". Used in plot nr. 10
+# - Themecolour = Background-colour can be set with a predefined colours set in themecolours (t.ex. themecolours[1]) or a hex-code
 npi_category <- "Engineering"
 
 # All analysis are performed in three steps: 
@@ -166,51 +171,59 @@ npi_category <- "Engineering"
 #  b) Plots are saved on disk (in folder "/plots")
 #  c) Data for plots (and the plot itself) are saved to inventory excel-file created above
 
+
 #------------------------------------------------
 #  Analysis - basic numbers
 #------------------------------------------------
 
 # 1. Basic yearly counts of publications in the dataset. Perspective from cris-data
-opa_basic_numbers <- plot_basic_counts(df_opa_analysis,df_opa_labels,"OpenAlex","green") # OpenAlex
+opa_basic_numbers <- plot_basic_counts(df_opa_analysis,df_opa_labels,"Cris",themecolours[3]) 
 save_plot(opa_basic_numbers$plot,df_opa_labels,"Cris","opa_basic_numbers")
 add_datasheet_to_excel(opa_basic_numbers,"opa_basic_numbers",outputfile)
 
 # 2. Most used journals
-opa_top_journals <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex","green")
+opa_top_journals <- plot_top_journals(df_opa_analysis,df_opa_labels,40,"OpenAlex",themecolors[2])
 save_plot(opa_top_journals$plot,df_opa_labels,"OpenAlex","opa_top_journals")
 add_datasheet_to_excel(opa_top_journals,"opa_top_journals",outputfile)
 
-# 3. Countries with most cooperation
-# (Not ready)
+# 3. Countries with most cooperation. 
+opa_top_contries <- plot_top_countries(df_opa_analysis,df_opa_labels, opa_authordetails_raw, 40,"OpenAlex",themecolors[2])
+save_plot(opa_top_contries$plot,df_opa_labels,"OpenAlex","opa_top_contries")
+add_datasheet_to_excel(opa_top_contries,"opa_top_contries",outputfile)
+
 
 # 4. OA-distribution
-# OpenAlex:
-opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris","green")
+opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris",themecolors[3])
 save_plot(opa_oa_distribution$plot,df_opa_labels,"Cris","opa_oa_distribution")
 add_datasheet_to_excel(opa_oa_distribution,"opa_oa_distribution",outputfile)
 #------------------------------------------------
 #  Analysis - Authors
 #------------------------------------------------
 
-# 6. Most productive authors by number of publications
-# (Not ready)
+# 6. Most productive authors by number of publications. 
+opa_top_authors_count <- plot_top_authors_count(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolors[2]) 
+save_plot(opa_top_authors_count$plot,df_opa_labels,"OpenAlex","opa_top_authors_count")
+add_datasheet_to_excel(opa_top_authors_count,"opa_top_authors_count",outputfile)
 
-# 7. Most productive authors by fractions 
-# (Not ready)
-
+# 7. Most productive authors by fractions. 
+opa_top_authors_fraction <- plot_top_authors_fraction(df_opa_analysis,df_opa_labels,opa_authordetails_raw,40,"OpenAlex",themecolors[2])
+save_plot(opa_top_authors_fraction$plot,df_opa_labels,"OpenAlex","opa_top_authors_fraction")
+add_datasheet_to_excel(opa_top_authors_fraction,"opa_top_authors_fraction",outputfile)
 #------------------------------------------------
 #  Analysis - citations 
 #------------------------------------------------
 
-# 8. Geom_point: Mean n citations in n number of WoS-categories 
+# 8. Geom_point: Mean n citations in n number of NIB-categories,currently only for WoS-data 
 # (Not ready)
 
-# 10. Percentile-distribution within  a single NIB-category.
+# 10. Percentile-distribution within a single NIB-category, currently only for WoS-data 
 # (Not ready)
 
 
 # 11. Experimental: Citation-distribution on OA per NIB-category
-# (Not ready)
+opa_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_opa_analysis,df_opa_labels,"Cris/OpenAlex", themecolors[2])
+save_plot(opa_oa_cit_distribution_npi_area$plot,df_opa_labels,"Cris-OpenAlex","opa_oa_cit_distribution_npi_area")
+add_datasheet_to_excel(opa_oa_cit_distribution_npi_area,"opa_oa_cit_dist_npi_area",outputfile)
 
 #-----------------------------------------
 #------------END SCRIPT-------------------
