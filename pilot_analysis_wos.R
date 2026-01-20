@@ -57,7 +57,7 @@ scope <- "Norway" # Full set (default)
 nvi_scope   <- "All"    # Unless set, default is set to "all"
 
 # Set year-span, which defaults to "2014" and "2024". Year_first can not be set older than 2010. 
-# The limitaton will not take place in the initial creation of
+# The limitation will not take place in the initial creation of
 # the dataset, but the values are are used for limiting the dataset in the analysis by either:
 # 1. year_of_publication (WoS). Found on all records that are matched
 # 2. cri_year (cris). Found on all records in cris
@@ -186,9 +186,9 @@ save_plot(wd_top_journals$plot,df_wos_labels,"WoS","wd_top_journals")
 add_datasheet_to_excel(wd_top_journals,"wd_top_journals",outputfile)
 
 # 3. Countries with most cooperation. Perspective from WoS-data
-wd_top_contries <- plot_top_countries(df_wos_analysis,df_wos_labels, wos_authordetails_raw, 40,"WoS",themecolours[1])
-save_plot(wd_top_contries$plot,df_wos_labels,"WoS","wd_top_contries")
-add_datasheet_to_excel(wd_top_contries,"wd_top_contries",outputfile)
+wd_top_countries <- plot_top_countries(df_wos_analysis,df_wos_labels, wos_authordetails_raw, 40,"WoS",themecolours[1])
+save_plot(wd_top_countries$plot,df_wos_labels,"WoS","wd_top_countries")
+add_datasheet_to_excel(wd_top_countries,"wd_top_countries",outputfile)
 
 # 4. OA-distribution. Perspective from cris-data
 wd_oa_distribution <- plot_oa_shares(df_wos_analysis,df_wos_labels,"Cris",themecolours[3])

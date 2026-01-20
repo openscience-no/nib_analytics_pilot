@@ -187,10 +187,9 @@ save_plot(opa_top_journals$plot,df_opa_labels,"OpenAlex","opa_top_journals")
 add_datasheet_to_excel(opa_top_journals,"opa_top_journals",outputfile)
 
 # 3. Countries with most cooperation. 
-opa_top_contries <- plot_top_countries(df_opa_analysis,df_opa_labels, opa_authordetails_raw, 40,"OpenAlex",themecolours[2])
-save_plot(opa_top_contries$plot,df_opa_labels,"OpenAlex","opa_top_contries")
-add_datasheet_to_excel(opa_top_contries,"opa_top_contries",outputfile)
-
+opa_top_countries <- plot_top_countries(df_opa_analysis,df_opa_labels, opa_authordetails_raw, 40,"OpenAlex",themecolours[2])
+save_plot(opa_top_countries$plot,df_opa_labels,"OpenAlex","opa_top_countries")
+add_datasheet_to_excel(opa_top_countries,"opa_top_countries",outputfile)
 
 # 4. OA-distribution
 opa_oa_distribution <- plot_oa_shares(df_opa_analysis,df_opa_labels,"Cris",themecolours[3])
