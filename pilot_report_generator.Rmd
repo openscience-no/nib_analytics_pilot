@@ -1,0 +1,369 @@
+---
+title: "Oppsummering av bibliometriske analyser fra NIB analysepilot"
+output: word_document
+date: "`r Sys.Date()`"
+params:
+    dbase: "base"
+    npi_category: NULL # WoS has this analysis, OpenAlex has not
+    labels: labels
+    inventory: inventory
+    basic_numbers: basic_numbers                            
+    top_journals:  top_journals
+    top_countries:  top_countries
+    oa_distribution: oa_distribution
+    top_authors_count: top_authors_count
+    top_authors_fraction: top_authors_fraction
+    mean_cit_top_categories: NULL # WoS has this analysis, OpenAlex has not
+    percentiles: NULL # WoS has this analysis, OpenAlex has not
+    oa_cit_distribution_npi_area: oa_cit_distribution_npi_area
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+library("ggthemes")
+library("flextable")
+
+# Run percentiles? If OpenAlex, then no, if WoS then yes. Testing if parameter is a list = WoS
+run_percentiles <-is.list(params$percentiles)
+# Run mean_cit_top_categories? If OpenAlex, then no, if WoS then yes. Testing if parameter is a list = WoS
+run_mctc <-is.list(params$mean_cit_top_categories)
+# Setting defaults for tables
+set_flextable_defaults(font.size= 9, text.align="left",table_align="center",theme_fun="theme_vanilla") 
+
+```
+
+## Resultater fra analysepilot
+
+Dette er et eksempel på en word-fil generert med R markdown. Filen blir generert med parametere som angir hvilken base (OpenAlex eller WoS) som ligger til grunn for analysene, samt data og input til analysene, som presenteres i form av tabeller og grafer, tabellene er noe mer tilrettelagt enn data i regnearket som piloten også genererer, men f.eks. kolonnenavn er ikke oversatt til Norsk. Markdown-koden kan justeres for å endre output, selv om det enkleste i mange tilfeller vil være å endre selve rapporten.
+
+Tabeller og grafer i denne rapporten er basert på **`r params$dbase`**. Det er laget flere eksempel-analyser for WoS enn for OpenAlex i piloten, rapporten vil derfor være litt forskjellig avhengig av base. Det forutsettes også at alle analysene (syv for OpenAlex, ni for WoS) er kjørt.
+
+Alle analyser er basert på et data-settet generert i piloten og dekker i denne rapporten publikasjoner i perioden fra **`r params$labels$year_first`** til **`r params$labels$year_last`**. Datasettet dekker **`r params$labels$institution`**.
+
+
+### Tabell over antall publikasjoner i datasettet
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r basic_numbers_tabell, echo=FALSE}
+# Reorganize table and format.
+params$basic_numbers$data %>%
+  pivot_wider(id_cols="year_of_publication",
+              names_from ="source",
+              values_from="n") %>%
+  mutate(year_of_publication=as.numeric(year_of_publication)) %>%
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+### Graf over antall publikasjoner i datasettet
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r opa_basic_numbers-plot,fig.width=7, fig.height=4.2, echo=FALSE}
+params$basic_numbers$plot
+```
+
+
+### Tabell over tidsskrift med flest publikasjoner
+(Viser kun topp 10 tidsskrift).
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_journals_tabell, echo=FALSE}
+# Reorganize table and format.
+params$top_journals$data %>%
+  slice_head(n=10) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+### Graf over tidsskrift med flest publikasjoner
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_journals-plot,fig.width=8, fig.height=6, echo=FALSE}
+params$top_journals$plot
+```
+
+
+### Tabell over mest samarbeidende land
+(Viser kun topp 10 land).
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_countries_tabell, echo=FALSE}
+# Reorganize table and format.
+params$top_countries$data %>%
+  slice_head(n=10) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+### Graf over mest samarbeidende land
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_countries-plot,fig.width=8, fig.height=6, echo=FALSE}
+params$top_countries$plot
+```
+
+
+### Tabell over Åpen Tilgang-distribusjon i perioden
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+#### Absolutte tall
+```{r oa_distribution_tabell1, echo=FALSE}
+# Reorganize table and format.
+params$oa_distribution$data %>%
+  select(-pct) %>% 
+   pivot_wider(id_cols="cri_year_reported",
+               names_from ="calculated_oa_status",
+               values_from="n") %>%
+   mutate(cri_year_reported=as.numeric(cri_year_reported)) %>%
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(cri_year_reported = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+#### Prosent
+```{r oa_distribution_tabell2, echo=FALSE}
+# Reorganize table and format.
+params$oa_distribution$data %>%
+  select(-n) %>% 
+   pivot_wider(id_cols="cri_year_reported",
+               names_from ="calculated_oa_status",
+               values_from="pct") %>%
+   mutate(cri_year_reported=as.numeric(cri_year_reported)) %>%
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(cri_year_reported = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+### Graf over Åpen Tilgang-distribusjonen i perioden
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r oa_distribution-plot,fig.width=8, fig.height=6, echo=FALSE}
+params$oa_distribution$plot
+```
+
+
+
+### Tabell over forskere med flest publikasjoner (antall deltagelser på publikasjon)
+(Viser kun topp 10 forskere).
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_authors_count_tabell, echo=FALSE}
+# Reorganize table and format.
+params$top_authors_count$data %>%
+  slice_head(n=10) %>% 
+  mutate(fraction_sum=round(fraction_sum,digits = 2)) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+### Graf over forskere med flest publikasjoner (antall deltagelser på publikasjon)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_authors_count,fig.width=8, fig.height=6, echo=FALSE}
+params$top_authors_count$plot
+```
+
+
+
+### Tabell over forskere med flest publikasjoner (fraksjonert telling)
+(Viser kun topp 10 forskere).
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_authors_fraction_tabell, echo=FALSE}
+# Reorganize table and format.
+params$top_authors_fraction$data %>%
+  slice_head(n=10) %>% 
+  mutate(fraction_sum=round(fraction_sum,digits = 2)) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+### Graf over forskere med flest publikasjoner (fraksjonert)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r top_authors_fraction,fig.width=8, fig.height=6, echo=FALSE}
+params$top_authors_fraction$plot
+```
+
+
+
+```{asis, echo=run_mctc} 
+### Tabell med gjennomsnitt av antall siteringer innenfor WoS-kategorier
+(Viser kun topp 10 kategorier)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. 
+```
+
+```{r mean_cit_top_categories_tabell, eval=run_mctc, echo=FALSE}
+# Reorganize table and format.
+params$mean_cit_top_categories$data %>%
+  select(-n, -max_cited) %>% 
+  slice_head(n=10) %>% 
+    mutate(avg_cited_by_count=round(avg_cited_by_count,digits = 2),
+           mean_crv=round(mean_crv,digits = 2)) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+```{asis, echo=run_mctc} 
+### Graf med gjennomsnitt av antall siteringer innenfor WoS-kategorier
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. 
+```
+
+```{r mean_cit_top_categories-graf,fig.width=8, eval=run_mctc,fig.height=6, echo=FALSE}
+
+params$mean_cit_top_categories$plot
+```
+
+
+
+```{asis, echo=run_percentiles} 
+### Tabell over persentil-distribusjonen
+(Viser kun topp 10, sortert på 10-persentilen)
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. 
+```
+
+```{r percentiles_tabell, eval=run_percentiles, echo=FALSE}
+# Reorganize table and format.
+params$percentiles$data %>%
+select(category,share_top10, share_top25, share_top50) %>% 
+  arrange(desc(share_top10)) %>% 
+  slice_head(n=10) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  #set_header_labels(year_of_publication = "Year") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+
+```{asis, echo=run_percentiles} 
+### Graf over persentil-distribusjonen
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. 
+```
+
+```{r percentiles,fig.width=8, eval=run_percentiles,fig.height=6, echo=FALSE}
+
+params$percentiles$plot
+```
+
+
+### Tabell over Åpen Tilgang-distribusjonen innen hvert fagfelt
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+#### Humaniora
+```{r oa_cit_distribution_npi_area_tabell1, echo=FALSE}
+# Reorganize table and format.
+params$oa_cit_distribution_npi_area$data %>%
+filter(cri_npi_area=="Humaniora") %>% 
+  ungroup() %>% 
+  select(-cri_npi_area) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(calculated_oa_status = "OA-status",mean_oa_npi_cited="Mean-cited") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+#### Medisin og helsefag
+```{r oa_cit_distribution_npi_area_tabell2, echo=FALSE}
+# Reorganize table and format.
+params$oa_cit_distribution_npi_area$data %>%
+filter(cri_npi_area=="Medisin og helsefag") %>% 
+  ungroup() %>% 
+  select(-cri_npi_area) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(calculated_oa_status = "OA-status",mean_oa_npi_cited="Mean-cited") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+#### Samfunnsvitenskap
+```{r oa_cit_distribution_npi_area_tabell3, echo=FALSE}
+# Reorganize table and format.
+params$oa_cit_distribution_npi_area$data %>%
+filter(cri_npi_area=="Samfunnsvitenskap") %>% 
+  ungroup() %>% 
+  select(-cri_npi_area) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(calculated_oa_status = "OA-status",mean_oa_npi_cited="Mean-cited") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+#### Realfag og teknologi
+```{r oa_cit_distribution_npi_area_tabell4, echo=FALSE}
+# Reorganize table and format.
+params$oa_cit_distribution_npi_area$data %>%
+filter(cri_npi_area=="Realfag og teknologi") %>% 
+  ungroup() %>% 
+  select(-cri_npi_area) %>% 
+  flextable() %>%
+  colformat_num(big.mark = "") %>%
+  colformat_int(big.mark = ",") %>%
+  set_header_labels(calculated_oa_status = "OA-status",mean_oa_npi_cited="Mean-cited") %>%
+  set_table_properties(width = .6,layout = "autofit")
+
+```
+
+
+### Graf over Åpen Tilgang-distribusjonen innen hvert fagfelt
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellentesque nunc, sit amet dapibus sem. Curabitur bibendum egestas risus, nec aliquet est sagittis sit amet. Nunc orci libero, hendrerit sit amet mauris non, imperdiet ullamcorper est. Vivamus tincidunt, ipsum eu lacinia porttitor, nisi dui sodales nisi, quis condimentum eros enim non nisi. 
+
+```{r oa_cit_distribution_npi_area,fig.width=8, fig.height=6, echo=FALSE}
+params$oa_cit_distribution_npi_area$plot
+```

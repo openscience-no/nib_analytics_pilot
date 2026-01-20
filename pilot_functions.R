@@ -2,7 +2,8 @@
 #-------------------------------------------------------------------
 # Step 0: Load data and check dependencies
 #-------------------------------------------------------------------
-Sys.setlocale("LC_ALL") # A precaution for some systems
+# Set locale settings
+Sys.setlocale(category = "LC_ALL", locale = "NO_NB.utf8") # A precaution for some systems
 
 # Libraries used in the pilot
 c("tidyverse", "RPostgres","ggthemes","stringr","cowplot","openxlsx")
@@ -27,18 +28,27 @@ library("openxlsx")
 
 # Default scopes 
 year_first <- 2014
-year_last  <- 2024
+year_last  <- 2025
 scope <- "Norway" # Full set (default)
 nvi_scope   <- "all"    # Full set (default)
-themecolours <- c( '#CFDEEC','#CFECDE','#ECECD0') # used for plotbackgrounds. 1. WoS, 2. OpenAlex,3.Cris
+themecolours <- c( '#CFDEEC','#CFECDE','#ECECD0') # used for plotbackgrounds and signals the main datasource for the plot: 
+# 1. WoS, 2. OpenAlex,3.Cris
+
+
+# Loading cris-data (NVA) from disk
+ifelse(exists("df_nva_oa_nib"),
+       print("df_nva_oa_nib allready loaded"), 
+       df_cri_oa_nib <- read.csv("data/df_nva_oa_nib.csv")%>% 
+         as_tibble())
+
 #-------------------
 # Functions for inventory of data (duplicated from func_match_inventory_format_write.R)
 #-------------------
 
 # Function for creating an inventory of a dataset with joined data from cris and wos
-match_inventory_cris <- function(cris_wos_df,col_id) {
+match_inventory_cris <- function(nib_nva_df,col_id) {
   
-  cris_wos_df <- cris_wos_df %>% 
+  nib_nva_df <- nib_nva_df %>% 
     rename(unique_id:= !!col_id)
   
   # !!paste0(name_old,"_items_uid_count"):=db_old_items_uid_count
@@ -48,33 +58,35 @@ match_inventory_cris <- function(cris_wos_df,col_id) {
   
   
   # Total numbers both total and  matched 
-  tot_n_matched_per_year <- cris_wos_df %>% 
-    group_by(cri_year) %>% 
-    summarise(n_total_records=n_distinct(cri_id),
+  tot_n_matched_per_year <- nib_nva_df %>% 
+    group_by(nva_year_pub) %>% 
+    summarise(n_total_records=n_distinct(nva_id),
               n_matched_records=n_distinct(unique_id)) %>% 
-    arrange(desc(cri_year)) %>% 
-    rename(year=cri_year)
+    arrange(desc(nva_year_pub)) %>% 
+    rename(year=nva_year_pub)
   
   # Total NVI-numbers total and matched 
-  nvi_n_per_year <- cris_wos_df %>% 
-    group_by(cri_year_reported) %>% 
-    filter(!is.na(cri_year_reported)) %>% 
-    summarise(n_nvi_records=n_distinct(cri_id),
+  nvi_n_per_year <- nib_nva_df %>% 
+    group_by(nva_year_reported) %>% 
+    filter(!is.na(nva_year_reported)) %>% 
+    summarise(n_nvi_records=n_distinct(nva_id),
               n_matched_nvi_records=n_distinct(unique_id)) %>% 
-    arrange(desc(cri_year_reported)) %>% 
-    rename(year=cri_year_reported)
+    arrange(desc(nva_year_reported)) %>% 
+    rename(year=nva_year_reported)
   
   # Total NVI-numbers total and matched (only articles)
-  matched_nvi_art_n_per_year <- cris_wos_df %>% 
-    group_by(cri_year_reported) %>% 
-    filter(!is.na(cri_year_reported) & cri_category_type == "Artikkel") %>% 
-    summarise(n_nvi_art_records=n_distinct(cri_id),
+  matched_nvi_art_n_per_year <- nib_nva_df %>% 
+    group_by(nva_year_reported) %>% 
+    filter(!is.na(nva_year_reported)) %>% 
+    filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | 
+             (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn")) %>% 
+    summarise(n_nvi_art_records=n_distinct(nva_id),
               n_matched_nvi_art_records=n_distinct(unique_id)) %>% 
-    arrange(desc(cri_year_reported)) %>% 
-    rename(year=cri_year_reported)
+    arrange(desc(nva_year_reported)) %>% 
+    rename(year=nva_year_reported)
   
   # Bind everything together and calculates shares in percentage
-  match_overview_wos <- tot_n_matched_per_year %>% 
+  match_overview <- tot_n_matched_per_year %>% 
     left_join(nvi_n_per_year, by="year") %>% 
     left_join(matched_nvi_art_n_per_year, by="year") %>% 
     mutate(percent_matched_tot=round(n_matched_records/n_total_records*100,digits=1),
@@ -84,7 +96,7 @@ match_inventory_cris <- function(cris_wos_df,col_id) {
     relocate(percent_matched_nvi, .after=n_matched_nvi_records)
   
   print("Done with inventory..")
-  return(match_overview_wos)
+  return(match_overview)
 } # End function
 
 # Function for formatting result and write to file
@@ -277,23 +289,26 @@ add_datasheet_to_excel <- function(datalist,sheet_name, filepath) {
 # Prep a) Creates either a full dataset as limited and downloaded from NIB, or limited further by institution. 
 create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, limit_nvi) {
   
+  nib_items <- nib_items %>% 
+    select(-doi)
+  
   if (limit_code=="Norway") { # National scope, no limiting
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
-      left_join(nib_items, by="cri_id",relationship = "many-to-many")
+      left_join(nib_items, by="nva_id",relationship = "many-to-many")
     print("Scope = 'Norway'")
-  } else if (limit_code=="RCN") {  # Hack for limiting to records financed by RCN
-    nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
-      left_join(nib_items, by="cri_id",relationship = "many-to-many") %>%
-      filter(cri_funder=="Norges forskningsrC%d")
-    print("Scope = 'RCN'")
+ # } else if (limit_code=="RCN") {  # Hack for limiting to records financed by RCN
+ #    nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
+ #     left_join(nib_items, by="nva_id",relationship = "many-to-many") %>%
+ #      filter(cri_funder=="Norges forskningsrC%d")
+ #   print("Scope = 'RCN'")
   } else if (stringr::str_length(as.integer(limit_code))>2) { # Limiting to institution by id eg. "185" for UiO
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
-      left_join(nib_items, by="cri_id",relationship = "many-to-many") %>% 
-      filter(cri_inst_id==limit_code) 
+      left_join(nib_items, by="nva_id",relationship = "many-to-many") %>% 
+      filter(nva_inst_id_main==limit_code) 
     print("Scope = 'Institution'")
   } else { # Exit-clause
     nib_lim_merge_nva_full <- df_cri_oa_nib  %>% 
-      left_join(nib_items, by="cri_id",relationship = "many-to-many")
+      left_join(nib_items, by="nva_id",relationship = "many-to-many")
     
     print("No valid code supplied: Defaulting to scope = 'Norway'")
     return()
@@ -302,13 +317,15 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, limit_nvi) {
 # limit to NVI or NVI-articles
   if (limit_nvi=="NVI") {
     nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
-      filter(cri_nvi_subset==TRUE)
+      filter(nva_nvi_status=="REPORTED")
   } else if (limit_nvi=="NVI-articles") {
     nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
-      filter(cri_nvi_subset==TRUE,cri_category_type == "Artikkel")
+      filter(nva_nvi_status=="REPORTED") %>% 
+      filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | 
+               (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn"))
   } # End limit
   
-  print("Setting oa-colors in dataset")
+  print("Simplifying oa-status in dataset")
   # Simplifying some OA-info by mapping categories
   nib_lim_merge_nva_full <- nib_lim_merge_nva_full %>% 
     mutate(calculated_oa_status=calculated_oa_status %>%
@@ -323,7 +340,7 @@ create_data_set <- function(nib_items,df_cri_oa_nib,limit_code, limit_nvi) {
              replace_na("closed")) %>% 
     ungroup()
   
-  print("calculating number of records (by cri_id)")
+  print("calculating number of records (by nva_id)")
   # Number of records (cri_id)
   n_doc <- nib_lim_merge_nva_full %>% 
     ungroup() %>% 
@@ -348,7 +365,7 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code,nvi_scope, year_firs
   } else if (stringr::str_length(as.integer(limit_code))>2) { # Institutional scope, limiting to institution
     inst <- nib_lim_merge_nva_full %>% 
       ungroup() %>% 
-      select(cri_inst_name_all) %>% 
+      select(nva_inst_top_name) %>% 
       slice_head(n=1) %>% 
       pull()
   } else {
@@ -363,18 +380,18 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code,nvi_scope, year_firs
                  nvi_scope = nvi_scope,
                  timespan_low=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   arrange(year_of_publication) %>% 
+                   arrange(nva_year_pub) %>% 
                    slice_head(n=1) %>% 
-                   pull(year_of_publication), 
+                   pull(nva_year_pub), 
                  timespan_high=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   arrange(desc(year_of_publication)) %>% 
+                   arrange(desc(nva_year_pub)) %>% 
                    slice_head(n=1) %>% 
-                   pull(year_of_publication),
+                   pull(nva_year_pub),
                  # Counts total
                  no_publications=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   summarise(n_publ=n_distinct(cri_id)) %>% 
+                   summarise(n_publ=n_distinct(nva_id)) %>% 
                    pull(),
                  no_matched_publications=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
@@ -383,23 +400,27 @@ create_labels <- function(nib_lim_merge_nva_full,limit_code,nvi_scope, year_firs
                  # Counts NVI
                  no_nvi_publications=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   filter(!is.na(cri_year_reported)) %>%
-                   summarise(n_publ=n_distinct(cri_id)) %>% 
+                   filter(!is.na(nva_year_reported)) %>%
+                   summarise(n_publ=n_distinct(nva_id)) %>% 
                    pull(),
                  no_matched_nvi_publications=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   filter(!is.na(cri_year_reported)) %>%
+                   filter(!is.na(nva_year_reported)) %>%
                    summarise(n_nib_publ=n_distinct(unique_id)) %>% 
                    pull(),
                  # Counts NVI-articles
                  no_nvi_articles=nib_lim_merge_nva_full %>% 
                    ungroup() %>% 
-                   filter(!is.na(cri_year_reported),cri_category_type=="Artikkel") %>%
-                   summarise(n_publ=n_distinct(cri_id)) %>% 
+                   filter(!is.na(nva_year_reported)) %>%
+                   filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | 
+                            (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn")) %>% 
+                   summarise(n_publ=n_distinct(nva_id)) %>% 
                    pull(),
                  no_matched_nvi_articles=nib_lim_merge_nva_full %>% 
                    ungroup() %>%
-                   filter(!is.na(cri_year_reported),cri_category_type=="Artikkel") %>%
+                   filter(!is.na(nva_year_reported)) %>%
+                   filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | 
+                            (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn")) %>% 
                    summarise(n_nib_publ=n_distinct(unique_id)) %>% 
                    pull()
   )
@@ -424,7 +445,7 @@ save_plot <- function(plot,analysis_data_labels,db,nr_type) {
 plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, theme_colour) {
   
   # Set method of time-filtering for information in plot
-  year_filtering <- "cri_year"
+  year_filtering <- "nva_year_pub"
     
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
@@ -432,29 +453,31 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, theme_c
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
     ungroup() %>% 
-    filter(cri_year <= analysis_data_labels$year_last, cri_year >=analysis_data_labels$year_first) %>% 
-    summarise(n=n_distinct(cri_id))
+    filter(nva_year_pub <= analysis_data_labels$year_last, nva_year_pub >=analysis_data_labels$year_first) %>% 
+    summarise(n=n_distinct(nva_id))
   
   # Data-set creation
   df_all <- analysis_data_set %>% 
     ungroup() %>% 
-    filter(cri_year <= analysis_data_labels$year_last, cri_year >=analysis_data_labels$year_first) %>% 
-    group_by(cri_year) %>% 
-    summarise(n=n_distinct(cri_id))
+    filter(nva_year_pub <= analysis_data_labels$year_last, nva_year_pub >=analysis_data_labels$year_first) %>% 
+    group_by(nva_year_pub) %>% 
+    summarise(n=n_distinct(nva_id))
   
   df_nvi <- analysis_data_set %>% 
-    filter(!is.na(cri_year_reported)) %>% 
-    filter(cri_year <= analysis_data_labels$year_last, cri_year >=analysis_data_labels$year_first) %>% 
+    filter(!is.na(nva_year_reported)) %>% 
+    filter(nva_year_pub <= analysis_data_labels$year_last, nva_year_pub >=analysis_data_labels$year_first) %>% 
     ungroup() %>% 
-    group_by(cri_year) %>% 
-    summarise(n=n_distinct(cri_id))
+    group_by(nva_year_pub) %>% 
+    summarise(n=n_distinct(nva_id))
   
-  df_nvi_art <- df_wos_analysis %>% 
-    filter(!is.na(cri_year_reported),cri_category_type=="Artikkel") %>% 
-    filter(cri_year <= analysis_data_labels$year_last, cri_year >=analysis_data_labels$year_first) %>% 
+  df_nvi_art <- analysis_data_set %>% 
+    filter(!is.na(nva_year_reported)) %>% 
+    filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | 
+             (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn")) %>%
+    filter(nva_year_pub <= analysis_data_labels$year_last, nva_year_pub >=analysis_data_labels$year_first) %>% 
     ungroup() %>% 
-    group_by(cri_year) %>% 
-    summarise(n=n_distinct(cri_id))
+    group_by(nva_year_pub) %>% 
+    summarise(n=n_distinct(nva_id))
   
   # Add a source label to both datasets
   df_all <- df_all %>% mutate(source = "All data")
@@ -464,7 +487,7 @@ plot_basic_counts <- function(analysis_data_set,analysis_data_labels,db, theme_c
   # Combine datasets for consistent color mapping
   df_combined <- bind_rows(df_all, df_nvi) %>% 
     bind_rows(df_nvi_art) %>% 
-    rename(year_of_publication=cri_year)
+    rename(year_of_publication=nva_year_pub)
   
   # Make plot
   p <- ggplot(df_combined, aes(x = year_of_publication, y = n, colour = source)) +
@@ -962,7 +985,7 @@ plot_citation_category <- function(analysis_data_set,analysis_data_labels, max_n
     scale_color_economist() +
     scale_x_continuous(labels = scales::label_comma()) +
     labs(
-      title = paste("No. citations per category"," (top ",max_no_categories,")", "\n","With field-norm ref-val (green).", sep=""),
+      title = paste("Mean n citations per category"," (top ",max_no_categories,")", "\n","With field-norm ref-val (green).", sep=""),
       subtitle = paste(analysis_data_labels$institution," (",
                        analysis_data_labels$year_first,"-",
                        analysis_data_labels$year_last,")",sep=""),

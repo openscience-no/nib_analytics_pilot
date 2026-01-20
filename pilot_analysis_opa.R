@@ -3,11 +3,11 @@
 # OPENALEX - VERSION
 #-------------------------------------------------------------------
 # Prerequisites: 
-#    nib-postgres-account to openalex
+#    NIB/postgresql-account with access to openalex
 #    IP is allowed entry to the NIB-server
 #    If pc is located in Sikt; edu-vpn
 #
-# In short: the script 
+# In short, the script: 
 # - Loads a predefined cris-data-set (to be replaced with live download of data through an api)
 # - Query OpenAlex-database and fetch a predefined dataset containing previously cris-matched data with citation and indicator-info
 # - The two datasets are joined
@@ -15,13 +15,13 @@
 # - Set a time-span, which is utilized within each analysis
 
 # Please note that some of the test-analyses choose info from either the cris or from OpenAlex, this is particularly
-# important with respect to info laid out in time series. It is therefore important to understand
-# the consequences of choices in each analyses and to what extent records are discarded from the dataset 
+# important with respect to where info is laid out in time series. It is therefore important to understand
+# the consequences of choices in each analyses and to what extent records are discarded from the dataset. 
 
 # As a general rule:
 #  - Some analyses disregards time-information, and treats data as a single set
 #  - In time-series, make note of which "year-info" that is used
-#      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVI-data. Cri_year is also used
+#      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVA-data. Cri_year is also used
 #      - If citation-based indicators are used, published_year from OpenAlex will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
 #  - Disciplinary groupings (categories) will use taxonomies from OpenAlex (as indicators are connected to these), naturally limiting the dataset to only matched records.
 
@@ -31,30 +31,25 @@
 #-----------------------------------
 # Load functions and set variables
 #-----------------------------------
-# Loading analysis-functions. Sourced script contains all functions necessary to run the bibliometric functions.
+# Loading analysis-functions. Sourced script contains all functions necessary to run bibliometric functions.
+# Includes loading of NVA/Cris-data from disk. (Must be located in the "/data"-folder). Selection of cris-data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
+# If data is allready loaded, this step is skipped.
 source("pilot_functions.R")
-
-# Load Cristin-data from disk. (Must be located in the "/data"-folder).
-# Selection of data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
-# Skip load data if variable already exists.
-ifelse(exists("df_cri_oa_nib"),
-       print("df_cri_oa_nib allready loaded"), 
-       df_cri_oa_nib <- read.csv("data/df_cri_oa_nib.csv"))
 
 # Set scope for analysis. Default is "Norway" e.g. all records, 
 # but this can be further limited to a single institution by adding the cris-institution-number.
 # for example with:
 # scope <- 184      # UiB - e.g institution-number in Cristin
-scope <- "Norway" # Full set (default)
+scope <- 184 # Full set (default)
 
 # NIV-scope limits the dataset further by by selecting only data that are either 
 # NVI-reported or NVI-reported articles. 
 # Use the codes "NVI" or "NVI-articles" 
 # Fore example nvi_scope   <- "NVI-articles"
 # NB: this choice has significant bearings on all inventories and analysis as the share of matched records is depended on the variable 
-nvi_scope   <- "all"    # Full set (default)
+nvi_scope   <- "NVI-articles"    # Full set (default)
 
-# Set year-span, which defaults to "2014" and "2024". Year_first can not be set older than 2010. 
+# Set year-span, which defaults to "2014" and "2025". Year_first can not be set older than 2010. 
 # The limitaton will not take place in the initial creation of
 # the dataset, but the values are are used for limiting the dataset in the analysis by either:
 #  1. year_of_publication (OpenAlex). Found on all records that are matched
@@ -62,7 +57,7 @@ nvi_scope   <- "all"    # Full set (default)
 #  3. Cri year_reported(cris). Found only on NVI-reported records
 
 year_first <- 2019
-year_last  <- 2024
+year_last  <- 2025
 
 # Set postgres-username
 nib_user <- "larswen"
@@ -117,8 +112,6 @@ DBI::dbDisconnect(nib_connection)
 # Remove > 2024-records,limit on document_types, and add counts from opa_authorinfo_raw
 # The scope on document_types will be expanded, but is currently limited since all matching happens on doi (which are only found on these document_types) 
 opa_records <- opa_works_raw %>% 
-  filter(document_type %in% c('article', 'book-chapter', 'book')) %>% 
-  filter(year_of_publication < 2025) %>% 
   left_join(
     opa_authorinfo_raw %>% 
       select(unique_id,no_authors, no_author_shares) %>% 
@@ -140,8 +133,7 @@ saveRDS(opa_records,"data/raw/opa_records.rds")
 # Information-labels are also for use in plots (full institution name, time-span,total number of publications etc.)
 
 # Set scope for OpenAlex-data and join in cristin-info:
-df_opa_analysis <- create_data_set(opa_records,df_cri_oa_nib,scope,nvi_scope) %>% 
-  as_tibble()
+df_opa_analysis <- create_data_set(opa_records,df_nva_oa_nib,scope,nvi_scope)
 df_opa_labels   <- create_labels(df_opa_analysis,scope, nvi_scope,year_first,year_last)
 
 # -----------------------------------------
@@ -150,7 +142,7 @@ df_opa_labels   <- create_labels(df_opa_analysis,scope, nvi_scope,year_first,yea
 # Create inventory for dataset and write to excel. 
 # Data-sets that are generated by the below analyses, will be added as separate sheets
 
-col_id <-"unique_id" # Setting a variable for which column is unique id, since the function can be used for other datasets.
+col_id <-"unique_id" # Setting a variable for which column is unique id, since the function is used for other similar datasets.
 outputfile <- paste0("plots/opa_inventory_",scope,"_",lubridate::today(),".xlsx")
 df_opa_analysis_inventory <- match_inventory_cris(df_opa_analysis, col_id)
 format_inventory_and_write_xlsx(df_opa_analysis_inventory, outputfile)
@@ -223,6 +215,30 @@ add_datasheet_to_excel(opa_top_authors_fraction,"opa_top_authors_fraction",outpu
 opa_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_opa_analysis,df_opa_labels,"Cris/OpenAlex", themecolours[2])
 save_plot(opa_oa_cit_distribution_npi_area$plot,df_opa_labels,"Cris-OpenAlex","opa_oa_cit_distribution_npi_area")
 add_datasheet_to_excel(opa_oa_cit_distribution_npi_area,"opa_oa_cit_dist_npi_area",outputfile)
+
+#--------------------------------
+#   Generate word-report
+#--------------------------------
+
+# Call rmd from script with parameters and generate word-report
+NIB_base <- "OpenAlex"
+
+rmarkdown::render("pilot_report_generator.Rmd", 
+                  params = list("dbase"=NIB_base,
+                                "npi_category"=NA,
+                                "labels" = df_opa_labels,
+                                "inventory"=df_opa_analysis_inventory,
+                                "basic_numbers"=opa_basic_numbers,
+                                "top_journals"=opa_top_journals,
+                                "top_countries"=opa_top_countries,
+                                "oa_distribution"=opa_oa_distribution,
+                                "top_authors_count"=opa_top_authors_count,
+                                "top_authors_fraction"=opa_top_authors_fraction,
+                                "mean_cit_top_categories"= NULL,
+                                "percentiles" = NULL,
+                                "oa_cit_distribution_npi_area"=opa_oa_cit_distribution_npi_area),
+                  output_dir = "plots",
+                  output_file = paste0("analysepilot_oppsummering_", NIB_base,"_",lubridate::today(), ".docx"))
 
 #-----------------------------------------
 #------------END SCRIPT-------------------

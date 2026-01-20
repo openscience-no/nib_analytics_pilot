@@ -3,11 +3,11 @@
 # WOS - VERSION
 #-------------------------------------------------------------------
 # Prerequisites: 
-#    nib-postgres-account to wos
+#    NIB/postgresql-account with access to wos
 #    IP is allowed entry to the NIB-server
 #    If pc is located in Sikt; edu-vpn
 #
-# In short: the script 
+# In short, the script: 
 # - Loads a predefined cris-data-set (to be replaced with live download of data through an api)
 # - Query WoS-database and fetch a predefined dataset containing previously cris-matched data with citation and indicator-info
 # - The two datasets are joined
@@ -15,13 +15,13 @@
 # - Set a time-span, which is utilized within each analysis
 
 # Please note that some of the test-analyses choose info from either the cris or from WoS, this is particularly
-# important with respect to info laid out in time series. It is therefore important to understand
-# the consequences of choices in each analyses and to what extent records are discarded from the dataset 
+# important with respect to where info is laid out in time series. It is therefore important to understand
+# the consequences of choices in each analyses and to what extent records are discarded from the dataset.
 
 # As a general rule:
-#  - Some analyses disregards time-information, and treats data as a single set
+#  - Some analyses disregards time-information and treats data as a single set
 #  - In time-series, make note of which "year-info" that is used
-#      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVI-data. Cri_year is also used
+#      - Analysis will use reported_year (from cris-data) as default and thus naturally limit the dataset to NVA-data. Cri_year is also used
 #      - If citation-based indicators are used, published_year from WoS will be used, naturally limiting the dataset to only matched records (both NVI and non-NVI scientific material).
 #  - Disciplinary groupings (categories) will use taxonomies from WoS (as indicators are connected to these), naturally limiting the dataset to only matched records.
 
@@ -33,16 +33,9 @@
 # Load functions and set variables
 #-----------------------------------
 # Loading analysis-functions. Sourced script contains all functions necessary to run the bibliometric functions.
+# Includes loading of NVA/Cris-data from disk. (Must be located in the "/data"-folder). Selection of cris-data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
+# If data is allready loaded, this step is skipped.
 source("pilot_functions.R")
-
-# Load Cristin-data from disk. (Must be located in the "/data"-folder).
-# Selection of data is limited by >= 2010, contains only scientific material and only authors-hares with a Norwegian affiliation. Data also includes funder-info.
-# Skip load data if variable already exists.
-ifelse(exists("df_cri_oa_nib"),
-       print("df_cri_oa_nib allready loaded"), 
-       df_cri_oa_nib <- read.csv("data/df_cri_oa_nib.csv") %>% 
-         as_tibble())
-
 
 # Set scope for analysis. Default is "Norway" e.g. all records, 
 # but this can be further limited to a single institution by adding the cris-institution-number.
@@ -54,7 +47,7 @@ scope <- "Norway" # Full set (default)
 # Use the codes "all", NVI" or "NVI-articles" 
 # For example: nvi_scope   <- "NVI-articles"
 # NB: this choice has significant bearings on all inventories and analysis as the share of matched records is depended on the variable 
-nvi_scope   <- "All"    # Unless set, default is set to "all"
+nvi_scope   <- "NVI"    # Unless set, default is set to "all"
 
 # Set year-span, which defaults to "2014" and "2024". Year_first can not be set older than 2010. 
 # The limitation will not take place in the initial creation of
@@ -64,13 +57,13 @@ nvi_scope   <- "All"    # Unless set, default is set to "all"
 # 3. Cri year_reported(cris). Found only on NVI-reported records
 
 year_first <- 2019
-year_last  <- 2024
+year_last  <- 2025
 
 # Set username
 nib_user <- "larswen"
 
 # Set db, User needs access-privileges to the database. 
-db_name  <- "wos_prod"
+db_name  <- "wos_test01"
 
 # Establish connection. User will be prompted for password
 nib_connection <- DBI::dbConnect(RPostgres::Postgres(),
@@ -118,7 +111,6 @@ DBI::dbDisconnect(nib_connection)
 # The scope on document_types will be expanded, but is currently limited since all matching happens on doi (which are only found on these document_types) 
 wos_records <- wos_items_raw %>% 
   filter(document_type %in% c("Article", "Review", "Proceedings Paper")) %>% 
-  filter(year_of_publication < 2025) %>% 
   left_join(
     wos_authorinfo_raw %>% 
       select(unique_id,no_authors, no_author_shares) %>% 
@@ -227,6 +219,30 @@ add_datasheet_to_excel(wd_percentiles,"wd_percentiles",outputfile)
 wd_oa_cit_distribution_npi_area <- plot_oa_shares_citation(df_wos_analysis,df_wos_labels,"Cris/WoS", themecolours[1])
 save_plot(wd_oa_cit_distribution_npi_area$plot,df_wos_labels,"Cris-WoS","wd_oa_cit_distribution_npi_area")
 add_datasheet_to_excel(wd_oa_cit_distribution_npi_area,"wd_oa_cit_distribution_npi_area",outputfile)
+
+#--------------------------------
+#   Generate word-report
+#--------------------------------
+
+# Call rmd from script with parameters and generate word-report
+NIB_base <- "WoS"
+
+rmarkdown::render("pilot_report_generator.Rmd", 
+                  params = list("dbase"=NIB_base,
+                                "npi_category"=npi_category,
+                                "labels" = df_wos_labels,
+                                "inventory"=df_wos_analysis_inventory,
+                                "basic_numbers"=wd_basic_numbers,
+                                "top_journals"=wd_top_journals,
+                                "top_countries"=wd_top_countries,
+                                "oa_distribution"=wd_oa_distribution,
+                                "top_authors_count"=wd_top_authors_count,
+                                "top_authors_fraction"=wd_top_authors_fraction,
+                                "mean_cit_top_categories"= wd_mean_cit_top_categories,
+                                "percentiles" = wd_percentiles,
+                                "oa_cit_distribution_npi_area"=wd_oa_cit_distribution_npi_area),
+                  output_dir = "plots",
+                  output_file = paste0("analysepilot_oppsummering_", NIB_base,"_",lubridate::today(), ".docx"))
 
 #-----------------------------------------
 #------------END SCRIPT-------------------
