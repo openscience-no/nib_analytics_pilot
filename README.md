@@ -1,14 +1,14 @@
 # nib_analytics_pilot
 
 ## NIB analyse pilot
-Analyse-piloten består av script i R utformet for å hente og analysere data fra NIB-basen.
+Analyse-piloten består av script i R utformet for å hente og analysere data fra NIB-basen. Se https://www.openscience.no/nib/pilot for en introduksjon.
 
 ## Beskrivelse
 Scriptene a) henter data fra NIB (WoS og OpenAlex), b) samkjører data med cris-data og c) kjører utvalgte demoanalyser. 
 Scriptene har status som 'pilot' og er ment å illustrere at veien fra data i NIB til analyse på egen pc ikke trenger å være uoverkommelig. Det vil likevel kreve en innsats for å tilpasse script og funksjoner til egne behov. 
 
 ## Skjermdumper
-(Kommer).
+(Kommer. Se også https://www.openscience.no/nib/pilot for eksempler).
 
 ## Kom i gang
 R og RStudio må være installert for å kunne kjøre piloten. Scriptene vil trolig fungere med Positron (som er et alternativt R-ide), men dette er ikke testet. Bruker må også ha en konto til postgresql-basen på NIB-serveren. Hvis man ikke har konto kan man søke om tilgang forutsatt at man er tilnyttet en norsk forskningsinstitusjon. (Les mer på http://www.openscience.no/nib). 
