@@ -39,8 +39,8 @@ source("pilot_functions.R")
 # Set scope for analysis. Default is "Norway" e.g. all records, 
 # but this can be further limited to a single institution by adding the cris-institution-number.
 # for example with:
-# scope <- 184      # UiB - e.g institution-number in Cristin
-scope <- 184 # Full set (default)
+#   scope <- 184      # UiB - e.g institution-number in Cristin. Default is full set
+scope <- 184 
 
 # NIV-scope limits the dataset further by by selecting only data that are either 
 # NVI-reported or NVI-reported articles. 

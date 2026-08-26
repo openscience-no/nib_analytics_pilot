@@ -9,12 +9,13 @@ Sys.setlocale(category = "LC_ALL", locale = "NO_NB.utf8") # A precaution for som
 c("tidyverse", "RPostgres","ggthemes","stringr","cowplot","openxlsx")
 
 # Check and install packages if missing
-ifelse(!"tidyverse" %in% installed.packages(),install.packages(tidyverse), "tidyverse allready installed")
-ifelse(!"RPostgres" %in% installed.packages(),install.packages(RPostgres), "RPostgres allready installed")
-ifelse(!"ggthemes" %in% installed.packages(),install.packages(ggthemes), "ggthemes allready installed")
-ifelse(!"stringr" %in% installed.packages(),install.packages(stringr), "stringr allready installed")
-ifelse(!"cowplot" %in% installed.packages(),install.packages(cowplot), "cowplot allready installed")
-ifelse(!"openxlsx" %in% installed.packages(),install.packages(openxlsx), "openxlsx allready installed")
+ifelse(!"tidyverse" %in% installed.packages(),install.packages("tidyverse"), "tidyverse allready installed")
+ifelse(!"RPostgres" %in% installed.packages(),install.packages("RPostgres"), "RPostgres allready installed")
+ifelse(!"ggthemes" %in% installed.packages(),install.packages("ggthemes"), "ggthemes allready installed")
+ifelse(!"stringr" %in% installed.packages(),install.packages("stringr"), "stringr allready installed")
+ifelse(!"cowplot" %in% installed.packages(),install.packages("cowplot"), "cowplot allready installed")
+ifelse(!"openxlsx" %in% installed.packages(),install.packages("openxlsx"), "openxlsx allready installed")
+ifelse(!"arrow" %in% installed.packages(),install.packages("arrows"), "arrow allready installed")
 
 # Create sub-folders if not exist
 ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), "Directory /data allready present")
