@@ -60,7 +60,7 @@ year_first <- 2019
 year_last  <- 2025
 
 # Set username
-nib_user <- "larswen"
+nib_user <- "larswen" # Choose your username
 
 # Set db, User needs access-privileges to the database. 
 db_name  <- "wos_test01"
