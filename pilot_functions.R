@@ -58,10 +58,11 @@ if (!file.exists(data_path)) {
 }
 
 # Loading cris-data (NVA) from disk
-ifelse(exists("df_nva_oa_nib"),
-       print("df_nva_oa_nib allready loaded"),
-       df_nva_oa_nib <- arrow::read_parquet(data_path))
-
+if (!exists("df_nva_oa_nib")) {
+  df_nva_oa_nib <- arrow::read_parquet(data_path)
+} else {
+  print("df_nva_oa_nib allready loaded")
+}
 
 #-------------------
 # Functions for inventory of data (duplicated from func_match_inventory_format_write.R)
