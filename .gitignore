@@ -3,5 +3,9 @@
 .RData
 .Ruserdata
 nib_analytics_pilot.Rproj
-/local_files
+/local_files/
+/.local_notes/
+/data/*
+/plots/
+/.claude/
 .positai

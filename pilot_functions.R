@@ -6,7 +6,7 @@
 Sys.setlocale(category = "LC_ALL", locale = "NO_NB.utf8") # A precaution for some systems
 
 # Libraries used in the pilot
-c("tidyverse", "RPostgres","ggthemes","stringr","cowplot","openxlsx")
+c("tidyverse", "RPostgres", "ggthemes", "stringr", "cowplot", "openxlsx", "arrow")
 
 # Check and install packages if missing
 ifelse(!"tidyverse" %in% installed.packages(),install.packages("tidyverse"), "tidyverse allready installed")
@@ -15,7 +15,7 @@ ifelse(!"ggthemes" %in% installed.packages(),install.packages("ggthemes"), "ggth
 ifelse(!"stringr" %in% installed.packages(),install.packages("stringr"), "stringr allready installed")
 ifelse(!"cowplot" %in% installed.packages(),install.packages("cowplot"), "cowplot allready installed")
 ifelse(!"openxlsx" %in% installed.packages(),install.packages("openxlsx"), "openxlsx allready installed")
-ifelse(!"arrow" %in% installed.packages(),install.packages("arrows"), "arrow allready installed")
+ifelse(!"arrow" %in% installed.packages(),install.packages("arrow"), "arrow allready installed")
 
 # Create sub-folders if not exist
 ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), "Directory /data allready present")
@@ -36,11 +36,32 @@ themecolours <- c( '#CFDEEC','#CFECDE','#ECECD0') # used for plotbackgrounds and
 # 1. WoS, 2. OpenAlex,3.Cris
 
 
+#-------------------
+# Download cris-data (NVA) from GitHub releases
+#-------------------
+# The data-file is not part of the git-repo, but is published as an asset on a GitHub release.
+# The file is downloaded to the folder /data the first time the script is run.
+# New data is published as a new release. Update data_release to the new tag to download it.
+data_release <- "data-2026-10"   # Release-tag on GitHub
+data_file    <- "df_nva_oa_nib.parquet"
+data_url     <- paste0("https://github.com/openscience-no/nib_analytics_pilot/releases/download/",
+                       data_release, "/", data_file)
+data_path    <- file.path("data", paste0(data_release, "_", data_file)) # Tag in filename, so a new tag triggers a new download
+
+if (!file.exists(data_path)) {
+  message("Downloading ", data_file, " (", data_release, ") from GitHub..")
+  options(timeout = max(600, getOption("timeout")))                  # Default timeout (60 sec) is too short for large files
+  download.file(data_url, paste0(data_path, ".part"), mode = "wb")   # mode = "wb" is required on Windows
+  file.rename(paste0(data_path, ".part"), data_path)                 # Only renamed when download is complete
+} else {
+  print(paste(data_file, "allready downloaded"))
+}
+
 # Loading cris-data (NVA) from disk
 ifelse(exists("df_nva_oa_nib"),
-       print("df_nva_oa_nib allready loaded"), 
-       df_cri_oa_nib <- read.csv("data/df_nva_oa_nib.csv")%>% 
-         as_tibble())
+       print("df_nva_oa_nib allready loaded"),
+       df_nva_oa_nib <- arrow::read_parquet(data_path))
+
 
 #-------------------
 # Functions for inventory of data (duplicated from func_match_inventory_format_write.R)
