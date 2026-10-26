@@ -60,10 +60,10 @@ year_first <- 2019
 year_last  <- 2025
 
 # Set username
-nib_user <- "CHANGE_THIS"     # Replace with your username
+nib_user <- "larswen"     # Replace with your username
 
 # Set db, User needs access-privileges to the database. 
-db_name  <- "wos_test01"
+db_name  <- "wos_prod"
 
 # Establish connection. User will be prompted for password
 nib_connection <- DBI::dbConnect(RPostgres::Postgres(),

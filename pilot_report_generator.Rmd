@@ -127,14 +127,14 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellente
 # Reorganize table and format.
 params$oa_distribution$data %>%
   select(-pct) %>% 
-   pivot_wider(id_cols="cri_year_reported",
+   pivot_wider(id_cols="nva_year_reported",
                names_from ="calculated_oa_status",
                values_from="n") %>%
-   mutate(cri_year_reported=as.numeric(cri_year_reported)) %>%
+   mutate(nva_year_reported=as.numeric(nva_year_reported)) %>%
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%
-  set_header_labels(cri_year_reported = "Year") %>%
+  set_header_labels(nva_year_reported = "Year") %>%
   set_table_properties(width = .6,layout = "autofit")
 
 ```
@@ -146,10 +146,10 @@ params$oa_distribution$data %>%
 # Reorganize table and format.
 params$oa_distribution$data %>%
   select(-n) %>% 
-   pivot_wider(id_cols="cri_year_reported",
+   pivot_wider(id_cols="nva_year_reported",
                names_from ="calculated_oa_status",
                values_from="pct") %>%
-   mutate(cri_year_reported=as.numeric(cri_year_reported)) %>%
+   mutate(nva_year_reported=as.numeric(nva_year_reported)) %>%
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%
@@ -304,9 +304,9 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sit amet pellente
 ```{r oa_cit_distribution_npi_area_tabell1, echo=FALSE}
 # Reorganize table and format.
 params$oa_cit_distribution_npi_area$data %>%
-filter(cri_npi_area=="Humaniora") %>% 
+filter(npi_academic_discipline=="Humanities") %>% 
   ungroup() %>% 
-  select(-cri_npi_area) %>% 
+  select(-npi_academic_discipline) %>% 
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%
@@ -319,9 +319,9 @@ filter(cri_npi_area=="Humaniora") %>%
 ```{r oa_cit_distribution_npi_area_tabell2, echo=FALSE}
 # Reorganize table and format.
 params$oa_cit_distribution_npi_area$data %>%
-filter(cri_npi_area=="Medisin og helsefag") %>% 
+filter(npi_academic_discipline=="Health Sciences") %>% 
   ungroup() %>% 
-  select(-cri_npi_area) %>% 
+  select(-npi_academic_discipline) %>% 
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%
@@ -334,9 +334,9 @@ filter(cri_npi_area=="Medisin og helsefag") %>%
 ```{r oa_cit_distribution_npi_area_tabell3, echo=FALSE}
 # Reorganize table and format.
 params$oa_cit_distribution_npi_area$data %>%
-filter(cri_npi_area=="Samfunnsvitenskap") %>% 
+filter(npi_academic_discipline=="Social Science") %>% 
   ungroup() %>% 
-  select(-cri_npi_area) %>% 
+  select(-npi_academic_discipline) %>% 
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%
@@ -349,9 +349,9 @@ filter(cri_npi_area=="Samfunnsvitenskap") %>%
 ```{r oa_cit_distribution_npi_area_tabell4, echo=FALSE}
 # Reorganize table and format.
 params$oa_cit_distribution_npi_area$data %>%
-filter(cri_npi_area=="Realfag og teknologi") %>% 
+filter(npi_academic_discipline=="Natural Sciences and Engineering") %>% 
   ungroup() %>% 
-  select(-cri_npi_area) %>% 
+  select(-npi_academic_discipline) %>% 
   flextable() %>%
   colformat_num(big.mark = "") %>%
   colformat_int(big.mark = ",") %>%

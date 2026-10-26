@@ -738,7 +738,7 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, theme_colo
   oa_color_map_seven <- scale_fill_manual(values=c("lightblue3", "gold","gold3","gold4", "palegreen4","grey50","grey65"))
   
   # Set method of time-filtering for information in plot
-  year_filtering <- "cri_year_reported"
+  year_filtering <- "nva_year_reported"
   
   # Set timespan (n years in dataset). Used to get correct breaks in plot
   n_year_span <- analysis_data_labels$year_last-analysis_data_labels$year_first
@@ -746,25 +746,27 @@ plot_oa_shares <- function(analysis_data_set,analysis_data_labels,db, theme_colo
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
     ungroup() %>% 
-    filter(cri_year_reported <= analysis_data_labels$year_last, cri_year_reported >=analysis_data_labels$year_first) %>% 
-    summarise(n=n_distinct(cri_id))
+    filter(nva_year_reported <= analysis_data_labels$year_last, nva_year_reported >=analysis_data_labels$year_first) %>% 
+    summarise(n=n_distinct(nva_id))
   
   
   # Plot of OA counts per year
   oa_data <- analysis_data_set %>% 
-    filter(!is.na(cri_year_reported) & cri_category_type == "Artikkel") %>% # Selecting articles only
-    filter(cri_year_reported <= analysis_data_labels$year_last, cri_year_reported >=analysis_data_labels$year_first) %>% 
-    select(cri_id, cri_year_reported, calculated_oa_status) %>% 
+    filter(!is.na(nva_year_reported) & nva_nvi_status == "REPORTED") %>% 
+    filter(nva_category_main %in% c("AcademicArticle","AcademicLiteratureReview") | (nva_category_main=="AcademicChapter"& nva_chapter_type=="issn")) %>% # Selecting articles only
+    filter(nva_year_reported <= analysis_data_labels$year_last, nva_year_reported >=analysis_data_labels$year_first) %>% 
+    select(nva_id, nva_year_reported, calculated_oa_status) %>% 
     distinct() %>% 
     mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
-    group_by(cri_year_reported,calculated_oa_status) %>% 
-    summarise(n = n_distinct(cri_id)) %>% 
-    group_by(cri_year_reported) %>% 
+    group_by(nva_year_reported,calculated_oa_status) %>% 
+    summarise(n = n_distinct(nva_id)) %>% 
+    group_by(nva_year_reported) %>% 
     mutate(total=sum(n),
            pct = round(n/total*100,digits=1)) 
+      
   
   p <- oa_data %>% 
-    ggplot(aes(x = cri_year_reported, y = total, fill = calculated_oa_status, label = paste(pct," %/ n= ",n,sep=""))) +
+    ggplot(aes(x = nva_year_reported, y = total, fill = calculated_oa_status, label = paste(pct," %/ n= ",n,sep=""))) +
     geom_bar(aes(y = pct), position = position_stack(reverse = TRUE),stat="identity") +
     geom_text(aes(y = pct), position = position_stack(reverse = TRUE),stat="identity", size=3, vjust=1) +
     theme_economist() +
@@ -1120,30 +1122,30 @@ plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,th
   oa_color_map_seven <- scale_fill_manual(values=c("lightblue3", "gold","gold3","gold4", "palegreen4","grey50","grey65"))
   
   # Set method of time-filtering for information in plot
-  year_filtering <- "cri_year"
+  year_filtering <- "nva_year"
   
   # Calculating number of records which forms basis for current analysis
   n_records_basis <-analysis_data_set %>%
     ungroup() %>% 
-    filter(cri_year <= analysis_data_labels$year_last, cri_year >=analysis_data_labels$year_first) %>% 
-    summarise(n=n_distinct(cri_id))
+    filter(nva_year_pub <= analysis_data_labels$year_last, nva_year_pub >=analysis_data_labels$year_first) %>% 
+    summarise(n=n_distinct(nva_id))
   
   # Calculating mean-values per NPI-area for comparison across OA-categories
   avg_lines <- analysis_data_set  %>% 
-    filter(!is.na(cri_npi_area)) %>%
-    select(cri_id, calculated_oa_status,cited_by_count,cri_npi_area) %>% 
+    filter(!is.na(npi_academic_discipline)) %>%
+    select(cri_id, calculated_oa_status,cited_by_count,npi_academic_discipline) %>% 
     distinct() %>% 
     mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
-    group_by(cri_npi_area) %>% 
+    group_by(npi_academic_discipline) %>% 
     summarise(mean_npi_cited=round(mean(cited_by_count,na.rm = T),digits=1))
   
   # Grouping on NPI-area.
   oa_cit_data <- analysis_data_set %>% 
-    filter(!is.na(cri_npi_area)) %>%
-    select(cri_id, calculated_oa_status,cited_by_count, cri_npi_area) %>% 
+    filter(!is.na(npi_academic_discipline)) %>%
+    select(cri_id, calculated_oa_status,cited_by_count, npi_academic_discipline) %>% 
     distinct() %>% 
     mutate(calculated_oa_status=factor(calculated_oa_status,levels=oa_ordered_levels_seven)) %>%
-    group_by(cri_npi_area,calculated_oa_status) %>% 
+    group_by(npi_academic_discipline,calculated_oa_status) %>% 
     summarise(n = n_distinct(cri_id),
               mean_oa_npi_cited=round(mean(cited_by_count,na.rm = T),digits=1)) 
   
@@ -1174,7 +1176,7 @@ plot_oa_shares_citation <- function(analysis_data_set,analysis_data_labels,db,th
       x = "OA-type",
       y= "number of citations") +
     labs(fill="OA-type") +
-    facet_wrap(~cri_npi_area, scales= "free_y",ncol=2)
+    facet_wrap(~npi_academic_discipline, scales= "free_y",ncol=2)
   
   # Add annotation to the canvas (not plot panel)
   p <- cowplot::ggdraw(p) +
