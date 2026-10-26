@@ -60,7 +60,7 @@ year_first <- 2019
 year_last  <- 2025
 
 # Set username
-nib_user <- "larswen" # Choose your username
+nib_user <- "CHANGE_THIS"     # Replace with your username
 
 # Set db, User needs access-privileges to the database. 
 db_name  <- "wos_test01"
@@ -132,7 +132,7 @@ saveRDS(wos_records,"data/raw/wos_records.rds")
 # Information-labels are also created for use in plots (full institution name, time-span,total number of publications etc.)
 
 # Set scope for WOS-data and join in cristin-info: 
-df_wos_analysis <- create_data_set(wos_records,df_cri_oa_nib,scope,nvi_scope)  
+df_wos_analysis <- create_data_set(wos_records,df_nva_oa_nib,scope,nvi_scope)  
 df_wos_labels   <- create_labels(df_wos_analysis,scope,nvi_scope, year_first,year_last)
 
 # -----------------------------------------

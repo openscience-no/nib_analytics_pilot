@@ -60,7 +60,7 @@ year_first <- 2019
 year_last  <- 2025
 
 # Set postgres-username
-nib_user <- "larswen"
+nib_user <- "CHANGE_THIS"     # Replace with your username
 
 # Set db, User needs access-privileges to the database. 
 db_name  <- "openalex_test01"
